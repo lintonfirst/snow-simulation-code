@@ -17,8 +17,8 @@ class RigidBodyManager:
             body[0]=ti.Vector([self.bodies[x][0],self.bodies[x][1],self.bodies[x][2]])
             scene.particles(body, radius=self.bodies[x][6], color=(0.7, 0, 0))
 
-    @ti.func
-    def step(self,dt):
+    @ti.kernel
+    def step(self,dt:float):
         for x in self.bodies:
             data=self.bodies[x]
             data[4]-=dt*9.8

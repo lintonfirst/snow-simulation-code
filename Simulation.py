@@ -11,7 +11,7 @@ class Simulation:
         self.rigidBodyManager=RigidBodyManager()
         self.particleManager=ParticleManager(self.rigidBodyManager,self.groundManager,config)
     
-    @ti.kernel
+ 
     def update(self):
         dt=0.03
         self.rigidBodyManager.step(dt)
