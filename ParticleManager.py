@@ -1,23 +1,27 @@
 import taichi as ti
-import RigidManager as RigidManager
+from RigidBodyManager import RigidBodyManager
+from GroundManager import GroundManager
 from Config import Config
 import taichi as ti
 import random
 
 @ti.data_oriented
-class ParticleManager:
-    @ti.kernel
-    def initPos(self):
-        for x in range(self.numParticles):
-            self.particles[x]=[ti.random(float) * 12.8 + 1.6,ti.random(float)  * 0.5,ti.random(float)  * 12.8+ 1.6]
-        
-    def __init__(self,rigidmanager):
-        self.rigidManager : RigidManager=rigidmanager
-        self.numGrids=Config['numGrids']
-        self.numParticles=Config['numParticles']
-        self.particles=ti.Vector.field(3,dtype=float,shape=self.numParticles)
-        self.initPos()
+class ParticleManager:        
+    def __init__(self,rigidBodyManager,groundManager,config:Config):
+        self.rigidBodyManager : RigidBodyManager=rigidBodyManager
+        self.groundManager:GroundManager=groundManager
+        self.particlesNum=0
+        self.pos=ti.Vector.field(3,dtype=float,shape=config.maxParticles)
+        self.vel=ti.Vector.field(3,dtype=float,shape=config.maxParticles)
+        self.mass=ti.Vector.field(1,dtype=float,shape=config.maxParticles)
+        self.volume=ti.Vector.field(1,dtype=float,shape=config.maxParticles)
+        self.density=ti.Vector.field(1,dtype=float,shape=config.maxParticles)
+        self.elastic=ti.Matrix.field(3,3,dtype=float,shape=config.maxParticles)
+        self.plastic=ti.Matrix.field(3,3,dtype=float,shape=config.maxParticles)
     
-    @ti.kernel
+    @ti.func
     def step(self):
         pass
+    
+    def render(self,scene:ti.ui.Scene):
+        scene.particles(self.pos, radius=0.05, color=(0.9, 0.9, 0.9),index_count=self.particlesNum)
