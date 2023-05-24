@@ -1,5 +1,5 @@
 import taichi as ti
-from Simulation import Simulation
+from Simulation import BasicSimulation
 from Config import Config
 
 ti.init(arch=ti.gpu)  # Alternatively, ti.init(arch=ti.cpu)
@@ -12,7 +12,7 @@ scene = ti.ui.Scene()
 camera = ti.ui.Camera()
 camera.position(17,1,8)
 camera.lookat(8,0.5,8)
-simulation=Simulation()
+simulation=BasicSimulation()
 
 print("begin frame")
 while window.running:

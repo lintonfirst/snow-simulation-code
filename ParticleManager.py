@@ -18,9 +18,9 @@ class ParticleManager:
         self.density=ti.Vector.field(1,dtype=float,shape=config.maxParticles)
         self.elastic=ti.Matrix.field(3,3,dtype=float,shape=config.maxParticles)
         self.plastic=ti.Matrix.field(3,3,dtype=float,shape=config.maxParticles)
-    
+
     @ti.func
-    def step(self):
+    def step(self,dt):
         pass
     
     def render(self,scene:ti.ui.Scene):
