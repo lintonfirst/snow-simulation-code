@@ -15,9 +15,9 @@ class ParticleManager:
         #particle
         self.pos=ti.Vector.field(3,dtype=float,shape=config.maxParticles)
         self.vel=ti.Vector.field(3,dtype=float,shape=config.maxParticles)
-        self.mass=ti.Vector.field(1,dtype=float,shape=config.maxParticles)
-        self.volume=ti.Vector.field(1,dtype=float,shape=config.maxParticles)
-        self.density=ti.Vector.field(1,dtype=float,shape=config.maxParticles)
+        self.mass=ti.field(float,shape=config.maxParticles)
+        self.volume=ti.field(float,shape=config.maxParticles)
+        self.density=ti.field(float,shape=config.maxParticles)
         self.elastic=ti.Matrix.field(3,3,dtype=float,shape=config.maxParticles)
         self.plastic=ti.Matrix.field(3,3,dtype=float,shape=config.maxParticles)
         
@@ -25,7 +25,13 @@ class ParticleManager:
         gridNum=config.gridNumX*config.gridNumY*config.gridNumZ
         self.gridVelocity=ti.Vector.field(3,dtype=float,shape=gridNum)
         self.gridForce=ti.Vector.field(3,dtype=float,shape=gridNum)
-        self.gridMass=ti.Vector.field(1,dtype=float,shape=gridNum)
+        self.gridMass=ti.field(float,shape=gridNum)
+        
+        #grid init
+        # for x in range(config.gridNumX*config.gridNumY*config.gridNumZ):
+        #     self.gridMass[x]=0
+        #     self.gridForce[x]=[0,0,0]
+        #     self.gridVelocity[x]=[0,0,0]
 
         # others
         self.firstIteration=True
@@ -47,7 +53,17 @@ class ParticleManager:
 
     @ti.kernel
     def rasterizeParticles(self,isFirstIteration:bool):
-
+        dx=self.config.gridSize
+        idx=1.0/dx
+        for x in range(self.particlesNum):
+            posX=self.pos[x][0]
+            posY=self.pos[x][1]
+            posZ=self.pos[x][2]
+            mass=self.mass[x]
+            gridIndexX=0
+            gridIndexY=0
+            gridIndexZ=0
+        
         pass
 
     @ti.kernel
@@ -57,10 +73,10 @@ class ParticleManager:
     @ti.kernel
     def updateGridVelocity(self, dt:float):
         for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
-            if self.gridMass[x][0]==0.0:
+            if self.gridMass[x]==0.0:
                 self.gridVelocity[x]=[0,0,0]
             else:
-                self.gridVelocity[x]+=dt*self.gridForce[x]/self.gridMass[x][0]
+                self.gridVelocity[x]+=dt*self.gridForce[x]/self.gridMass[x]
 
     @ti.kernel
     def updateDeformationGradient(self,dt:float):

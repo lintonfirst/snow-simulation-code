@@ -14,13 +14,11 @@ class RigidBodyManager:
     @ti.func
     def addRigidBody(self,pos,velocity,radius,mass):
         num=self.bodyNum[0]
-        print(num)
         self.pos[num]=pos
         self.vel[num]=velocity
         self.radius[num]=radius
         self.mass[num]=mass
         self.bodyNum[0]+=1
-        print(self.pos[0],self.pos[1])
     
     def render(self,scene:ti.ui.Scene):
         if(self.bodyNum[0])>0:
