@@ -4,15 +4,32 @@ import taichi as ti
 @ti.func
 def interpolation(x):
     res=0.0
-    if x<=1:
-        res=0.5*x*x*x-x*x+2.0/3.0
+    abs_x=ti.abs(x)
+    if abs_x<=1:
+        res=0.5*abs_x*x*x-x*x+2.0/3.0
     else:
-        res=-x*x*x/6.0+x*x-2.0*x+4.0/3.0
+        res=-abs_x*x*x/6.0+x*x-2.0*abs_x+4.0/3.0
+    return res
+
+@ti.func
+def d_interpolation(x):
+    res=0.0
+    abs_x=ti.abs(x)
+    if abs_x==0:
+        res=0
+    elif abs_x<=1:
+        res=1.5*x*abs_x-2*x
+    else:
+        res=-0.5*abs_x*x+2*x-2.0*x/abs_x
     return res
 
 @ti.func
 def calGridWeight(offsetX,offsetY,offsetZ,idx):
-    normalizeX=ti.abs(offsetX)*idx
-    normalizeY=ti.abs(offsetY)*idx
-    normalizeZ=ti.abs(offsetZ)*idx
+    normalizeX=offsetX*idx
+    normalizeY=offsetY*idx
+    normalizeZ=offsetZ*idx
     return interpolation(normalizeX)*interpolation(normalizeY)*interpolation(normalizeZ)
+
+@ti.func 
+def calDerivative(offsetX,offsetY,offsetZ,idx):
+    return d_interpolation(offsetX*idx)*interpolation(offsetY*idx)*interpolation(offsetZ*idx)

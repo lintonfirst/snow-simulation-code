@@ -57,6 +57,7 @@ class ParticleManager:
     @ti.kernel
     def rasterizeParticles(self,isFirstIteration:bool):
         dx=self.config.gridSize
+        dx3=dx*dx*dx
         idx=1.0/dx
         for x in range(self.particlesNum):
             posX=self.pos[x][0]
@@ -85,7 +86,6 @@ class ParticleManager:
                 
             #rasterize
             if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-1 and gridIndexY < self.config.gridNumY-1 and gridIndexZ < self.config.gridNumZ-1:
-                all=0.0
                 for a in range(3):
                     for b in range(3):
                         for c in range(3):
@@ -96,9 +96,56 @@ class ParticleManager:
                             offsetY=posY-dx*(grid_y+0.5)
                             offsetZ=posZ-dx*(grid_z+0.5)
                             weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
-                            all+=weight
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
                             self.gridMass[grid_index]+=weight*mass
+        
+        for x in range(self.particlesNum):
+            posX=self.pos[x][0]
+            posY=self.pos[x][1]
+            posZ=self.pos[x][2]
+            mass=self.mass[x]
+            
+            # calculate gridIndex
+            gridIndexX=int(posX*idx)
+            if gridIndexX<0:
+                gridIndexX=0
+            if gridIndexX>self.config.gridNumX-1:
+                gridIndexX=self.config.gridNumX-1
+            
+            gridIndexY=int(posY*idx)
+            if gridIndexY<0:
+                gridIndexY=0
+            if gridIndexY>self.config.gridNumY-1:
+                gridIndexY=self.config.gridNumY-1
+                
+            gridIndexZ=int(posZ*idx)
+            if gridIndexZ<0:
+                gridIndexZ=0
+            if gridIndexZ>self.config.gridNumZ-1:
+                gridIndexZ=self.config.gridNumZ-1
+                
+            if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-1 and gridIndexY < self.config.gridNumY-1 and gridIndexZ < self.config.gridNumZ-1:
+                for a in range(3):
+                    for b in range(3):
+                        for c in range(3):
+                            grid_x=gridIndexX+a-1
+                            grid_y=gridIndexY+b-1
+                            grid_z=gridIndexZ+c-1
+                            offsetX=posX-dx*(grid_x+0.5)
+                            offsetY=posY-dx*(grid_y+0.5)
+                            offsetZ=posZ-dx*(grid_z+0.5)
+                            grid_mass=self.gridMass[x]
+                            weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
+                            grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
+                            if grid_mass>0 :
+                                self.gridVelocity[grid_index]+=self.vel[x]*mass*weight/grid_mass
+                            if isFirstIteration:
+                                self.density[x]+=grid_mass*weight/dx3
+                               
+            if isFirstIteration:
+                self.volume[x]=self.mass[x]/self.density[x]
+
+                                
             
     @ti.func
     def calGridIndex(self,x,y,z):
@@ -106,7 +153,66 @@ class ParticleManager:
 
     @ti.kernel
     def calculateForces(self,dt:float):
-        pass
+        dx=self.config.gridSize
+        idx=1.0/dx
+        for x in range(self.particlesNum):
+            plastic_determinant=ti.Matrix.determinant(self.plastic[x])
+            elastic_determinant=ti.Matrix.determinant(self.elastic[x])
+            cauchyStress=plastic_determinant*elastic_determinant
+            U, S, V = ti.svd(self.elastic[x])
+            RE=U*ti.Matrix.transpose(V)
+            SE=V*S*V.transpose()
+            mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
+            lam=self.config.lam*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
+            sigma=2.0*mu/cauchyStress*(self.plastic[x]-RE)@ti.Matrix.transpose(self.elastic[x]) + lam/cauchyStress*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)
+                            
+            volumn=self.volume[x]*plastic_determinant
+            
+            posX=self.pos[x][0]
+            posY=self.pos[x][1]
+            posZ=self.pos[x][2]
+            mass=self.mass[x]
+            
+            # calculate gridIndex
+            gridIndexX=int(posX*idx)
+            if gridIndexX<0:
+                gridIndexX=0
+            if gridIndexX>self.config.gridNumX-1:
+                gridIndexX=self.config.gridNumX-1
+            
+            gridIndexY=int(posY*idx)
+            if gridIndexY<0:
+                gridIndexY=0
+            if gridIndexY>self.config.gridNumY-1:
+                gridIndexY=self.config.gridNumY-1
+                
+            gridIndexZ=int(posZ*idx)
+            if gridIndexZ<0:
+                gridIndexZ=0
+            if gridIndexZ>self.config.gridNumZ-1:
+                gridIndexZ=self.config.gridNumZ-1
+            
+            if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-1 and gridIndexY < self.config.gridNumY-1 and gridIndexZ < self.config.gridNumZ-1:
+                for a in range(3):
+                    for b in range(3):
+                        for c in range(3):
+                            grid_x=gridIndexX+a-1
+                            grid_y=gridIndexY+b-1
+                            grid_z=gridIndexZ+c-1
+                            offsetX=posX-dx*(grid_x+0.5)
+                            offsetY=posY-dx*(grid_y+0.5)
+                            offsetZ=posZ-dx*(grid_z+0.5)
+                            grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
+                            derivative_weight_x=calDerivative(offsetX,offsetY,offsetZ,idx)
+                            derivative_weight_y=calDerivative(offsetY,offsetZ,offsetX,idx)
+                            derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)                            
+                            self.gridForce[grid_index]+= - volumn *sigma@ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
+        
+        for x in range(self.config.gridNumX):
+            for y in range(self.config.gridNumY):
+                for z in range(self.config.gridNumZ):
+                    grid_index=self.calGridIndex(x,y,z)
+                    self.gridForce[grid_index]+=self.gridMass[x]*ti.Vector([0,-9.8,0])
 
     @ti.kernel
     def updateGridVelocity(self, dt:float):
