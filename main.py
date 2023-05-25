@@ -4,7 +4,7 @@ from Config import Config
 
 ti.init(arch=ti.gpu)  # Alternatively, ti.init(arch=ti.cpu)
 
-window = ti.ui.Window("Taichi Snow Simulation on GGUI", (512, 512),
+window = ti.ui.Window("Taichi Snow Simulation on GGUI", (1024,768),
                       vsync=True)
 canvas = window.get_canvas()
 canvas.set_background_color((0, 0, 0))
