@@ -2,6 +2,7 @@ import taichi as ti
 from RigidBodyManager import RigidBodyManager
 from GroundManager import GroundManager
 from Config import Config
+from mathUtil import *
 import taichi as ti
 import random
 
@@ -25,19 +26,14 @@ class ParticleManager:
         gridNum=config.gridNumX*config.gridNumY*config.gridNumZ
         self.gridVelocity=ti.Vector.field(3,dtype=float,shape=gridNum)
         self.gridForce=ti.Vector.field(3,dtype=float,shape=gridNum)
-        self.gridMass=ti.field(float,shape=gridNum)
-        
-        #grid init
-        # for x in range(config.gridNumX*config.gridNumY*config.gridNumZ):
-        #     self.gridMass[x]=0
-        #     self.gridForce[x]=[0,0,0]
-        #     self.gridVelocity[x]=[0,0,0]
+        self.gridMass=ti.field(float,shape=gridNum)        
 
         # others
         self.firstIteration=True
         self.config:Config=config
 
     def step(self,dt):
+        self.clearCache()
         self.rasterizeParticles(self.firstIteration)
         self.firstIteration=False
         self.calculateForces(dt)
@@ -52,6 +48,13 @@ class ParticleManager:
         scene.particles(self.pos, radius=0.05, color=(0.9, 0.9, 0.9),index_count=self.particlesNum)
 
     @ti.kernel
+    def clearCache(self):
+        for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
+            self.gridMass[x]=0
+            self.gridForce[x]=[0,0,0]
+            self.gridVelocity[x]=[0,0,0]
+        
+    @ti.kernel
     def rasterizeParticles(self,isFirstIteration:bool):
         dx=self.config.gridSize
         idx=1.0/dx
@@ -60,11 +63,46 @@ class ParticleManager:
             posY=self.pos[x][1]
             posZ=self.pos[x][2]
             mass=self.mass[x]
-            gridIndexX=0
-            gridIndexY=0
-            gridIndexZ=0
-        
-        pass
+            
+            # calculate gridIndex
+            gridIndexX=int(posX*idx)
+            if gridIndexX<0:
+                gridIndexX=0
+            if gridIndexX>self.config.gridNumX-1:
+                gridIndexX=self.config.gridNumX-1
+            
+            gridIndexY=int(posY*idx)
+            if gridIndexY<0:
+                gridIndexY=0
+            if gridIndexY>self.config.gridNumY-1:
+                gridIndexY=self.config.gridNumY-1
+                
+            gridIndexZ=int(posZ*idx)
+            if gridIndexZ<0:
+                gridIndexZ=0
+            if gridIndexZ>self.config.gridNumZ-1:
+                gridIndexZ=self.config.gridNumZ-1
+                
+            #rasterize
+            if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-1 and gridIndexY < self.config.gridNumY-1 and gridIndexZ < self.config.gridNumZ-1:
+                all=0.0
+                for a in range(3):
+                    for b in range(3):
+                        for c in range(3):
+                            grid_x=gridIndexX+a-1
+                            grid_y=gridIndexY+b-1
+                            grid_z=gridIndexZ+c-1
+                            offsetX=posX-dx*(grid_x+0.5)
+                            offsetY=posY-dx*(grid_y+0.5)
+                            offsetZ=posZ-dx*(grid_z+0.5)
+                            weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
+                            all+=weight
+                            grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
+                            self.gridMass[grid_index]+=weight*mass
+            
+    @ti.func
+    def calGridIndex(self,x,y,z):
+        return x*self.config.gridNumX*self.config.gridNumX+y*self.config.gridNumY+z
 
     @ti.kernel
     def calculateForces(self,dt:float):
