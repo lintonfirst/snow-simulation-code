@@ -47,6 +47,7 @@ class ParticleManager:
 
     @ti.kernel
     def rasterizeParticles(self,isFirstIteration:bool):
+
         pass
 
     @ti.kernel
@@ -55,7 +56,11 @@ class ParticleManager:
 
     @ti.kernel
     def updateGridVelocity(self, dt:float):
-        pass
+        for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
+            if self.gridMass[x][0]==0.0:
+                self.gridVelocity[x]=[0,0,0]
+            else:
+                self.gridVelocity[x]+=dt*self.gridForce[x]/self.gridMass[x][0]
 
     @ti.kernel
     def updateDeformationGradient(self,dt:float):
@@ -73,4 +78,5 @@ class ParticleManager:
 
     @ti.kernel
     def updateParticlePosition(self,dt:float):
-        pass
+        for x in range(self.particlesNum):
+            self.pos[x]+=dt*self.vel[x]
