@@ -161,7 +161,7 @@ class ParticleManager:
             cauchyStress=plastic_determinant*elastic_determinant
             U, S, V = ti.svd(self.elastic[x])
             RE=U*ti.Matrix.transpose(V)
-            SE=V*S*V.transpose()
+            
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             lam=self.config.lam*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             sigma=2.0*mu/cauchyStress*(self.plastic[x]-RE)@ti.Matrix.transpose(self.elastic[x]) + lam/cauchyStress*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)
