@@ -7,8 +7,8 @@ import taichi as ti
 @ti.data_oriented
 class Simulation:
     def __init__(self,config:Config):
-        self.groundManager=GroundManager()
-        self.rigidBodyManager=RigidBodyManager()
+        self.groundManager=GroundManager(config)
+        self.rigidBodyManager=RigidBodyManager(config)
         self.particleManager=ParticleManager(self.rigidBodyManager,self.groundManager,config)
     
  

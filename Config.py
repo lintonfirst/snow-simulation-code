@@ -12,3 +12,4 @@ class Config:
         self.lam:float=self.youngs_modulus*self.poissons_ratio/((1.0+self.poissons_ratio)* (1 - 2 * self.poissons_ratio))
         
         self.filp_alpha:float=0.95
+        self.friction_coeff:float=0.35

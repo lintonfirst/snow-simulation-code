@@ -1,9 +1,11 @@
 import taichi as ti
+from Config import Config
 
 #球形刚体
 @ti.data_oriented
 class RigidBodyManager:            
-    def __init__(self):
+    def __init__(self,config:Config):
+        self.config=config
         self.bodyNum=ti.field(int,shape=1)
         self.bodyNum[0]=0
         self.pos=ti.Vector.field(3,dtype=float,shape=4) #pos,velocity,radius,mass
@@ -33,9 +35,22 @@ class RigidBodyManager:
             self.pos[x][2]+=dt*self.vel[x][2]
     
     @ti.func
-    def detectCollision(pos,halfSize):
-        return False
+    def detectCollision(self,pos,halfSize):
+        flag=False
+        for x in range(self.bodyNum[0]):
+            if (pos-self.pos[x]).norm()<self.radius[x]+halfSize:
+                flag=True
+        return flag
     
     @ti.func
-    def resolveCollision(pos,velociy):
-        pass
+    def resolveCollision(self,pos,velocity):
+        for x in range(self.bodyNum[0]):
+            normal=(pos-self.pos[x]).normalized()
+            v_n=normal@velocity
+            if not v_n>=0:
+                v_t=velocity-v_n*normal
+                v_t_norm=v_t.norm()
+                if v_t_norm <= -self.config.friction_coeff*v_n:
+                    velocity=[0.0,0.0,0.0]
+                else:
+                    velocity=v_t+self.config.friction_coeff*v_n/v_t_norm*v_t
