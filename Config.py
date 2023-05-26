@@ -10,3 +10,5 @@ class Config:
         self.youngs_modulus:float = 1.4e5
         self.mu:float=self.youngs_modulus/(2.0*(1.0+self.poissons_ratio))
         self.lam:float=self.youngs_modulus*self.poissons_ratio/((1.0+self.poissons_ratio)* (1 - 2 * self.poissons_ratio))
+        
+        self.filp_alpha:float=0.95
