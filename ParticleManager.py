@@ -37,11 +37,11 @@ class ParticleManager:
         self.clearCache()
         self.rasterizeParticles(self.firstIteration)
         self.firstIteration=False
-        self.calculateForces(dt)
+        self.calculateForces()
         self.updateGridVelocity(dt)
         self.handleGridBasedCollision(dt)
         self.updateDeformationGradient(dt)
-        self.updateParticleVelocity(dt)
+        self.updateParticleVelocity()
         self.handleParticleBasedCollision(dt)
         self.updateParticlePosition(dt)
     
@@ -154,7 +154,7 @@ class ParticleManager:
         return x*self.config.gridNumX*self.config.gridNumX+y*self.config.gridNumY+z
 
     @ti.kernel
-    def calculateForces(self,dt:float):
+    def calculateForces(self):
         dx=self.config.gridSize
         idx=1.0/dx
         for x in range(self.particlesNum):
@@ -173,7 +173,7 @@ class ParticleManager:
             posX=self.pos[x][0]
             posY=self.pos[x][1]
             posZ=self.pos[x][2]
-            mass=self.mass[x]
+            
             
             # calculate gridIndex
             gridIndexX=int(posX*idx)
@@ -198,6 +198,7 @@ class ParticleManager:
                 for a in range(3):
                     for b in range(3):
                         for c in range(3):
+                            
                             grid_x=gridIndexX+a-1
                             grid_y=gridIndexY+b-1
                             grid_z=gridIndexZ+c-1
@@ -233,7 +234,7 @@ class ParticleManager:
         pass
 
     @ti.kernel
-    def updateParticleVelocity(self,dt:float):
+    def updateParticleVelocity(self):
         dx=self.config.gridSize
         idx=1.0/dx
         for x in range(self.particlesNum):

@@ -28,7 +28,7 @@ class BasicSimulation(Simulation):
         config=Config()
         super(BasicSimulation,self).__init__(config)
         self.init()
-        self.particleManager.particlesNum=20000
+        self.particleManager.particlesNum=60000
     
     @ti.kernel
     def init(self):
@@ -39,8 +39,8 @@ class BasicSimulation(Simulation):
         self.rigidBodyManager.addRigidBody(ti.Vector([8,8,8]),ti.Vector([0,0,0]),0.5,1)
         
         # 添加雪的粒子
-        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+20000):
-            self.particleManager.pos[x]=[ti.random(float) * 12.8 + 1.6,ti.random(float)  * 0.5,ti.random(float)  * 12.8+ 1.6]
+        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+60000):
+            self.particleManager.pos[x]=[ti.random(float) * 12.8 + 1.6,ti.random(float)  * 2.0,ti.random(float)  * 12.8+ 1.6]
             self.particleManager.vel[x]=[0,0,0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
