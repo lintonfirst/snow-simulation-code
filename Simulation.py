@@ -44,5 +44,8 @@ class BasicSimulation(Simulation):
             self.particleManager.vel[x]=[0,0,0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
+            self.particleManager.mass[x]=0.2
+            self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
+            self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
             
         

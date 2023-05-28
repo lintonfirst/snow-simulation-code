@@ -35,15 +35,19 @@ class ParticleManager:
 
     def step(self,dt):
         self.clearCache()
+        
         self.rasterizeParticles(self.firstIteration)
         self.firstIteration=False
         self.calculateForces()
         self.updateGridVelocity(dt)
+        
         self.handleGridBasedCollision(dt)
-        self.updateDeformationGradient(dt)
+        self.updateDeformationGradient(dt)     
         self.updateParticleVelocity()
+        
         self.handleParticleBasedCollision(dt)
         self.updateParticlePosition(dt)
+
     
     def render(self,scene:ti.ui.Scene):
         scene.particles(self.pos, radius=0.05, color=(0.9, 0.9, 0.9),index_count=self.particlesNum)
@@ -51,10 +55,10 @@ class ParticleManager:
     @ti.kernel
     def clearCache(self):
         for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
-            self.gridMass[x]=0
-            self.gridForce[x]=[0,0,0]
-            self.gridOldVelocity[x]=[0,0,0]
-            self.gridVelocity[x]=[0,0,0]
+            self.gridMass[x]=0.0
+            self.gridForce[x]=[0.0,0.0,0.0]
+            self.gridOldVelocity[x]=[0.0,0.0,0.0]
+            self.gridVelocity[x]=[0.0,0.0,0.0]
         
     @ti.kernel
     def rasterizeParticles(self,isFirstIteration:bool):
@@ -136,18 +140,18 @@ class ParticleManager:
                             offsetX=posX-dx*(grid_x+0.5)
                             offsetY=posY-dx*(grid_y+0.5)
                             offsetZ=posZ-dx*(grid_z+0.5)
-                            grid_mass=self.gridMass[x]
+                                        
                             weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
-                            if grid_mass>0 :
+                            grid_mass=self.gridMass[grid_index]
+                            if grid_mass>0.0 :
                                 self.gridVelocity[grid_index]+=self.vel[x]*mass*weight/grid_mass
                             if isFirstIteration:
                                 self.density[x]+=grid_mass*weight/dx3
                                
             if isFirstIteration:
-                self.volume[x]=self.mass[x]/self.density[x]
-
-                                
+                self.volume[x]=self.mass[x]/self.density[x] 
+                                           
             
     @ti.func
     def calGridIndex(self,x,y,z):
@@ -166,9 +170,8 @@ class ParticleManager:
             
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             lam=self.config.lam*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
-            sigma=2.0*mu/cauchyStress*(self.plastic[x]-RE)@ti.Matrix.transpose(self.elastic[x]) + lam/cauchyStress*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)
-                            
-            volumn=self.volume[x]*plastic_determinant
+            sigma=2.0*mu/cauchyStress*(self.plastic[x]-RE)@ti.Matrix.transpose(self.elastic[x]) + lam/cauchyStress*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
+            volume=self.volume[x]*plastic_determinant
             
             posX=self.pos[x][0]
             posY=self.pos[x][1]
@@ -197,8 +200,7 @@ class ParticleManager:
             if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-1 and gridIndexY < self.config.gridNumY-1 and gridIndexZ < self.config.gridNumZ-1:
                 for a in range(3):
                     for b in range(3):
-                        for c in range(3):
-                            
+                        for c in range(3):                            
                             grid_x=gridIndexX+a-1
                             grid_y=gridIndexY+b-1
                             grid_z=gridIndexZ+c-1
@@ -208,15 +210,16 @@ class ParticleManager:
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
                             derivative_weight_x=calDerivative(offsetX,offsetY,offsetZ,idx)
                             derivative_weight_y=calDerivative(offsetY,offsetZ,offsetX,idx)
-                            derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)                            
-                            self.gridForce[grid_index]+= - volumn *sigma@ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
-        
+                            derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)                      
+                            self.gridForce[grid_index]+= - volume *sigma@ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
+                            
         for x in range(self.config.gridNumX):
             for y in range(self.config.gridNumY):
                 for z in range(self.config.gridNumZ):
                     grid_index=self.calGridIndex(x,y,z)
-                    self.gridForce[grid_index]+=self.gridMass[x]*ti.Vector([0,-9.8,0])
-
+                    self.gridForce[grid_index]+=self.gridMass[grid_index]*ti.Vector([0,-9.8,0])
+        
+            
     @ti.kernel
     def updateGridVelocity(self, dt:float):
         for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
@@ -327,6 +330,7 @@ class ParticleManager:
             
             v_pic=ti.Vector([0.0,0.0,0.0])
             v_flip=self.vel[x]
+            
             if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-1 and gridIndexY < self.config.gridNumY-1 and gridIndexZ < self.config.gridNumZ-1:
                 for a in range(3):
                     for b in range(3):
@@ -341,6 +345,7 @@ class ParticleManager:
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
                             v_pic+=weight*self.gridVelocity[grid_index]
                             v_flip+=weight*(self.gridVelocity[grid_index]-self.gridOldVelocity[grid_index])
+            
             self.vel[x]=(1-self.config.filp_alpha)*v_pic+self.config.filp_alpha*v_flip
             
 
