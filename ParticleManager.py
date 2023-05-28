@@ -41,11 +41,11 @@ class ParticleManager:
         self.calculateForces()
         self.updateGridVelocity(dt)
         
-        self.handleGridBasedCollision(dt)
+        # self.handleGridBasedCollision(dt)
         self.updateDeformationGradient(dt)     
         self.updateParticleVelocity()
         
-        self.handleParticleBasedCollision(dt)
+        # self.handleParticleBasedCollision(dt)
         self.updateParticlePosition(dt)
 
     

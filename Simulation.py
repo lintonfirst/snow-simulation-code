@@ -33,15 +33,15 @@ class BasicSimulation(Simulation):
     @ti.kernel
     def init(self):
         # 添加平面
-        self.groundManager.addGround(8,8,8)
+        self.groundManager.addGround(8,8,16)
         
         # 添加球形刚体 
         self.rigidBodyManager.addRigidBody(ti.Vector([8,8,8]),ti.Vector([0,0,0]),0.5,1)
         
         # 添加雪的粒子
         for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+60000):
-            self.particleManager.pos[x]=[ti.random(float) * 12.8 + 1.6,ti.random(float)  * 2.0,ti.random(float)  * 12.8+ 1.6]
-            self.particleManager.vel[x]=[0,0,0]
+            self.particleManager.pos[x]=[ti.random(float) * 12.8 + 1.6,ti.random(float)  * 1.0,ti.random(float)  * 12.8+ 1.6]
+            self.particleManager.vel[x]=[0.0,0.0,0.0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
             self.particleManager.mass[x]=0.2
