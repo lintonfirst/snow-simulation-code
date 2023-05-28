@@ -1,5 +1,9 @@
 import taichi as ti 
+ti.init()
 
-@ti.func
-def detectCollision(pos:ti.Vector.field,halfSize:ti.float32)->bool:
-    return False
+@ti.kernel
+def func():
+    U,S,V=ti.svd(ti.Matrix.zero(float,3,3))
+    print(S)
+
+func()

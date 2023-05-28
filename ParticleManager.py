@@ -231,6 +231,7 @@ class ParticleManager:
         dx=self.config.gridSize
         idx=1.0/dx
         for x in range(self.particlesNum):
+            grad_v=ti.Matrix.zero(float,3,3)
             posX=self.pos[x][0]
             posY=self.pos[x][1]
             posZ=self.pos[x][2]
@@ -264,9 +265,24 @@ class ParticleManager:
                             offsetX=posX-dx*(grid_x+0.5)
                             offsetY=posY-dx*(grid_y+0.5)
                             offsetZ=posZ-dx*(grid_z+0.5)
-                            weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
+                            derivative_weight_x=calDerivative(offsetX,offsetY,offsetZ,idx)
+                            derivative_weight_y=calDerivative(offsetY,offsetZ,offsetX,idx)
+                            derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)  
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
-        #todo
+                            derivative_weight=ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
+                            grad_v+= self.gridVelocity[grid_index].outer_product(derivative_weight)
+            next=(ti.Matrix.zero(float,3,3)+dt*grad_v)*self.elastic[x]*self.plastic[x]
+            U,S,V=ti.svd(next)
+            min=1-self.config.critical_compression
+            max=1+self.config.critical_stretch
+            S[0,0]=ti.math.clamp(S[0,0],min,max)
+            S[1,1]=ti.math.clamp(S[1,1],min,max)
+            S[2,2]=ti.math.clamp(S[2,2],min,max)
+            self.elastic[x]=U*S*V.transpose()
+            S[0,0]=1.0/S[0,0]
+            S[1,1]=1.0/S[1,1]
+            S[2,2]=1.0/S[2,2]
+            self.plastic[x]=V*S*U.transpose()*next
 
     @ti.kernel
     def handleGridBasedCollision(self,dt:float):

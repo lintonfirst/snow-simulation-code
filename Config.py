@@ -13,3 +13,6 @@ class Config:
         
         self.filp_alpha:float=0.95
         self.friction_coeff:float=0.35
+        self.critical_compression:float=0.025
+        self.critical_stretch:float=0.0075
+        
