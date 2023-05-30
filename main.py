@@ -10,7 +10,7 @@ canvas = window.get_canvas()
 canvas.set_background_color((0, 0, 0))
 scene = ti.ui.Scene()
 camera = ti.ui.Camera()
-camera.position(17,1,8)
+camera.position(17,3,8)
 camera.lookat(8,0.5,8)
 simulation=BasicSimulation()
 

@@ -17,7 +17,7 @@ class GroundManager:
         for a in range(100):
             for b in range(100):
                 index=self.groundsNum[0]*10000+100*a+b
-                self.groundGrids[index]=[x-size*0.5+size/99.0*b,0.2,z-size*0.5+size/99.0*a]  
+                self.groundGrids[index]=[x-size*0.5+size/99.0*b,1.0,z-size*0.5+size/99.0*a]  
                 
         self.groundsNum[0]+=1
         
@@ -30,7 +30,7 @@ class GroundManager:
         flag=False
         for x in range(self.groundsNum[0]):
             ground=self.grounds[x]
-            if pos[0]>ground[0]-0.5*ground[2]-halfSize and pos[0]<ground[2]+0.5*ground[2]+halfSize and pos[0]>ground[0]-0.5*ground[2]-halfSize and pos[2]<ground[2]+0.5*ground[1]+halfSize and pos[1]-halfSize<0.2:
+            if pos[0]>ground[0]-0.5*ground[2]-halfSize and pos[0]<ground[2]+0.5*ground[2]+halfSize and pos[0]>ground[0]-0.5*ground[2]-halfSize and pos[2]<ground[2]+0.5*ground[1]+halfSize and pos[1]-halfSize<1.0:
                 flag=True
         return flag
     
