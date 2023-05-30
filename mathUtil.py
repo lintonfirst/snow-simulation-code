@@ -15,9 +15,7 @@ def interpolation(x):
 def d_interpolation(x):
     res=0.0
     abs_x=ti.abs(x)
-    if abs_x==0:
-        res=0
-    elif abs_x<=1:
+    if abs_x<=1:
         res=1.5*x*abs_x-2*x
     else:
         res=-0.5*abs_x*x+2*x-2.0*x/abs_x
