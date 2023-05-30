@@ -41,11 +41,11 @@ class ParticleManager:
         self.calculateForces()
         self.updateGridVelocity(dt)
         
-        # self.handleGridBasedCollision(dt)
+        self.handleGridBasedCollision(dt)
         self.updateDeformationGradient(dt)     
         self.updateParticleVelocity()
         
-        # self.handleParticleBasedCollision(dt)
+        self.handleParticleBasedCollision(dt)
         self.updateParticlePosition(dt)
 
     
@@ -155,7 +155,7 @@ class ParticleManager:
             
     @ti.func
     def calGridIndex(self,x,y,z):
-        return x*self.config.gridNumX*self.config.gridNumX+y*self.config.gridNumY+z
+        return x*self.config.gridNumY*self.config.gridNumZ+y*self.config.gridNumZ+z
 
     @ti.kernel
     def calculateForces(self):

@@ -1,5 +1,6 @@
 class Config:
     def __init__(self):
+        self.stepsPerFrame=1
         self.maxParticles:int=100000
         self.gridSize:float=0.1
         self.gridNumX:int=160

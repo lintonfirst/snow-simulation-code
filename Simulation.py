@@ -10,12 +10,14 @@ class Simulation:
         self.groundManager=GroundManager(config)
         self.rigidBodyManager=RigidBodyManager(config)
         self.particleManager=ParticleManager(self.rigidBodyManager,self.groundManager,config)
+        self.config:Config=config
     
  
     def update(self):
         dt=0.03
-        self.rigidBodyManager.step(dt)
-        self.particleManager.step(dt)
+        for x in range(self.config.stepsPerFrame):
+            self.rigidBodyManager.step(dt/self.config.stepsPerFrame)
+            self.particleManager.step(dt/self.config.stepsPerFrame)
 
     def render(self,scene:ti.ui.Scene):
        self.groundManager.render(scene)
