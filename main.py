@@ -2,7 +2,7 @@ import taichi as ti
 from Simulation import BasicSimulation
 from Config import Config
 
-ti.init(arch=ti.cuda)  # Alternatively, ti.init(arch=ti.cpu)
+ti.init(arch=ti.gpu)  # Alternatively, ti.init(arch=ti.cpu)
 
 window = ti.ui.Window("Taichi Snow Simulation on GGUI", (1024,768),
                       vsync=True)

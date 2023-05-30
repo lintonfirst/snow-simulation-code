@@ -54,3 +54,4 @@ class RigidBodyManager:
                     velocity=[0.0,0.0,0.0]
                 else:
                     velocity=v_t+self.config.friction_coeff*v_n/v_t_norm*v_t
+        return velocity

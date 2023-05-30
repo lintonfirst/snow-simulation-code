@@ -42,7 +42,7 @@ class ParticleManager:
         self.updateGridVelocity(dt)
         
         self.handleGridBasedCollision(dt)
-        self.updateDeformationGradient(dt)     
+        # self.updateDeformationGradient(dt)     
         self.updateParticleVelocity()
         
         self.handleParticleBasedCollision(dt)
@@ -296,9 +296,9 @@ class ParticleManager:
                     grid_index=self.calGridIndex(x,y,z)
                     pos=[x+0.5*self.config.gridSize,y+0.5*self.config.gridSize,z+0.5*self.config.gridSize]
                     if self.groundManager.detectCollision(pos,self.config.gridSize*0.5)==1:
-                        self.groundManager.resolveCollision(self.gridVelocity[grid_index])
+                        self.gridVelocity[grid_index]=self.groundManager.resolveCollision(self.gridVelocity[grid_index])
                     if self.rigidBodyManager.detectCollision(pos,self.config.gridSize*0.5)==1:
-                        self.rigidBodyManager.resolveCollision(pos,self.gridVelocity[grid_index])
+                        self.gridVelocity[grid_index]=self.rigidBodyManager.resolveCollision(pos,self.gridVelocity[grid_index])
 
     @ti.kernel
     def updateParticleVelocity(self):
@@ -355,9 +355,9 @@ class ParticleManager:
         for x in range(self.particlesNum):
             nextPos=self.pos[x]+dt*self.vel[x]
             if self.groundManager.detectCollision(nextPos,0.0):
-                self.groundManager.resolveCollision(self.vel[x])
+                self.vel[x]=self.groundManager.resolveCollision(self.vel[x])
             if self.rigidBodyManager.detectCollision(nextPos,0):
-                self.rigidBodyManager.resolveCollision(self.pos[x],self.vel[x])
+                self.vel[x]=self.rigidBodyManager.resolveCollision(self.pos[x],self.vel[x])
 
     @ti.kernel
     def updateParticlePosition(self,dt:float):

@@ -42,7 +42,7 @@ class BasicSimulation(Simulation):
         
         # 添加雪的粒子
         for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+60000):
-            self.particleManager.pos[x]=[ti.random(float) * 12.8 + 1.6,ti.random(float)  * 1.0,ti.random(float)  * 12.8+ 1.6]
+            self.particleManager.pos[x]=[ti.random(float) * 12.8 + 1.6,0.2+ti.random(float)  * 1.0,ti.random(float)  * 12.8+ 1.6]
             self.particleManager.vel[x]=[0.0,0.0,0.0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
