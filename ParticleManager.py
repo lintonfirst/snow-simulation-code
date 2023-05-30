@@ -42,7 +42,7 @@ class ParticleManager:
         self.updateGridVelocity(dt)
         
         self.handleGridBasedCollision(dt)
-        # self.updateDeformationGradient(dt)     
+        self.updateDeformationGradient(dt)     
         self.updateParticleVelocity()
         
         self.handleParticleBasedCollision(dt)
@@ -166,7 +166,7 @@ class ParticleManager:
             elastic_determinant=ti.Matrix.determinant(self.elastic[x])
             cauchyStress=plastic_determinant*elastic_determinant
             U, S, V = ti.svd(self.elastic[x])
-            RE=U*ti.Matrix.transpose(V)
+            RE=U@V.transpose()
             
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             lam=self.config.lam*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
@@ -196,7 +196,7 @@ class ParticleManager:
                 gridIndexZ=0
             if gridIndexZ>self.config.gridNumZ-1:
                 gridIndexZ=self.config.gridNumZ-1
-            
+
             if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-1 and gridIndexY < self.config.gridNumY-1 and gridIndexZ < self.config.gridNumZ-1:
                 for a in range(3):
                     for b in range(3):
@@ -274,18 +274,23 @@ class ParticleManager:
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
                             derivative_weight=ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
                             grad_v+= self.gridVelocity[grid_index].outer_product(derivative_weight)
-            next=(ti.Matrix.zero(float,3,3)+dt*grad_v)*self.elastic[x]*self.plastic[x]
-            U,S,V=ti.svd(next)
+
+            elastic_next=(ti.Matrix.identity(float,3)+dt*grad_v)@self.elastic[x]
+            next=elastic_next@self.plastic[x]
+            U,S,V=ti.svd(elastic_next)
             min=1-self.config.critical_compression
             max=1+self.config.critical_stretch
-            S[0,0]=ti.math.clamp(S[0,0],min,max)
-            S[1,1]=ti.math.clamp(S[1,1],min,max)
-            S[2,2]=ti.math.clamp(S[2,2],min,max)
-            self.elastic[x]=U*S*V.transpose()
-            S[0,0]=1.0/S[0,0]
-            S[1,1]=1.0/S[1,1]
-            S[2,2]=1.0/S[2,2]
-            self.plastic[x]=V*S*U.transpose()*next
+            sigma=ti.Matrix.identity(float,3)
+            inv_sigma=ti.Matrix.identity(float,3)
+            sigma[0,0]=ti.math.clamp(S[0,0],min,max)
+            sigma[1,1]=ti.math.clamp(S[1,1],min,max)
+            sigma[2,2]=ti.math.clamp(S[2,2],min,max)
+            inv_sigma[0,0]=1.0/ti.math.clamp(S[0,0],min,max)
+            inv_sigma[1,1]=1.0/ti.math.clamp(S[1,1],min,max)
+            inv_sigma[2,2]=1.0/ti.math.clamp(S[2,2],min,max)
+            self.elastic[x]=U@sigma@V.transpose()
+            self.plastic[x]=V@inv_sigma@U.transpose()@next
+            
 
     @ti.kernel
     def handleGridBasedCollision(self,dt:float):
