@@ -4,6 +4,8 @@ from GroundManager import GroundManager
 from Config import Config
 import taichi as ti
 
+
+
 @ti.data_oriented
 class Simulation:
     def __init__(self,config:Config):
@@ -31,34 +33,38 @@ class BasicSimulation(Simulation):
         config=Config()
         super(BasicSimulation,self).__init__(config)
         self.init()
-        self.particleManager.particlesNum=20000
+        self.particleManager.particlesNum=11*38*10*6
     
     @ti.kernel
     def init(self):
         # 添加平面
         self.groundManager.addGround(8,8,16)
         
-        # 添加球形刚体 
-        self.rigidBodyManager.addRigidBody(ti.Vector([8,8,8]),ti.Vector([0,0,0]),0.5,1)
-        
         # 添加雪的粒子
-        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+20000):
-            self.particleManager.pos[x]=[ti.random(float) * 6.4 + 4.8,1.0+ti.random(float)  * 1.0,ti.random(float)  * 6.4+ 4.8]
-            self.particleManager.vel[x]=[0.0,0.0,0.0]
-            self.particleManager.density[x]=0
-            self.particleManager.volume[x]=0
-            self.particleManager.mass[x]=0.2
-            self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
-            self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
+        for i in range(11):
+            for j in range(38):
+                for k in range(6):
+                    for m in range(10):
+                        x=i*38*60+j*60+k*10+m
+                        if(self.particleManager.textdata[j*11+i]==1):
+                            self.particleManager.pos[x]=[3.0+k*0.2+0.1*ti.random(float),6.0-0.2*i+0.1*ti.random(float),12.0-0.2*j+0.1*ti.random(float)]
+                        else:
+                            self.particleManager.pos[x]=[-100,-100,-100]
+                        self.particleManager.vel[x]=[0.0,0.0,0.0]
+                        self.particleManager.density[x]=0
+                        self.particleManager.volume[x]=0
+                        self.particleManager.mass[x]=0.2
+                        self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
+                        self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
 
 @ti.data_oriented
 class ThrowSnowBallSimulation(Simulation):
     def __init__(self):
         config=Config()
-        config.stepsPerFrame=10
+        config.stepsPerFrame=1
         super(ThrowSnowBallSimulation,self).__init__(config)
         self.init()
-        self.particleManager.particlesNum=20000
+        self.particleManager.particlesNum=10000
     
     @ti.kernel
     def init(self):
@@ -66,9 +72,10 @@ class ThrowSnowBallSimulation(Simulation):
         self.groundManager.addGround(8,8,16)
         
         # 添加雪的粒子
-        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+20000):
-            self.particleManager.pos[x]=[ti.random(float) * 6.4 + 4.8,1.0+ti.random(float)  * 1.0,ti.random(float)  * 6.4+ 4.8]
-            self.particleManager.vel[x]=[0.0,0.0,0.0]
+        radius=1.2
+        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+10000):
+            self.particleManager.pos[x]=[8-radius+2.0*radius*ti.random(float),6-radius+2.0*radius*ti.random(float),3.0-radius+2.0*radius*ti.random(float)]
+            self.particleManager.vel[x]=[0.0,0.3,5.0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
             self.particleManager.mass[x]=0.2
@@ -107,19 +114,27 @@ class SnowBallFallSimulation(Simulation):
         config=Config()
         super(SnowBallFallSimulation,self).__init__(config)
         self.init()
-        self.particleManager.particlesNum=20000
+        self.particleManager.particlesNum+=20000
+        self.particleManager.particlesNum+=4000
     
     @ti.kernel
     def init(self):
         # 添加平面
         self.groundManager.addGround(8,8,16)
         
-        # 添加球形刚体 
-        self.rigidBodyManager.addRigidBody(ti.Vector([8,8,8]),ti.Vector([0,0,0]),2,1)
-        
         # 添加雪的粒子
         for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+20000):
             self.particleManager.pos[x]=[ti.random(float) * 6.4 + 4.8,1.0+ti.random(float)  * 1.0,ti.random(float)  * 6.4+ 4.8]
+            self.particleManager.vel[x]=[0.0,0.0,0.0]
+            self.particleManager.density[x]=0
+            self.particleManager.volume[x]=0
+            self.particleManager.mass[x]=0.2
+            self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
+            self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
+        
+        radius=0.8
+        for x in range(self.particleManager.particlesNum+20000,self.particleManager.particlesNum+24000):
+            self.particleManager.pos[x]=[8-radius+ti.random(float)*2.0*radius,4.0-radius+ti.random(float)*2.0*radius,8-1.5+radius+ti.random(float)*2.0*radius]
             self.particleManager.vel[x]=[0.0,0.0,0.0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
