@@ -1,10 +1,12 @@
 import taichi as ti
 from Config import Config
+from GroundManager import GroundManager
 
 #球形刚体
 @ti.data_oriented
 class RigidBodyManager:            
-    def __init__(self,config:Config):
+    def __init__(self,groundManager:GroundManager,config:Config):
+        self.groundManager:GroundManager=groundManager
         self.config=config
         self.bodyNum=ti.field(int,shape=1)
         self.bodyNum[0]=0
@@ -29,10 +31,13 @@ class RigidBodyManager:
     @ti.kernel
     def step(self,dt:float):
         for x in range(self.bodyNum[0]):
-            self.vel[x][1]-=dt*9.8
+            if self.groundManager.detectCollision(self.pos[x],self.radius[x]):
+                self.vel[x]=self.groundManager.resolveCollision(self.vel[x])
+            else:
+                self.vel[x][1]-=dt*9.8
             self.pos[x][0]+=dt*self.vel[x][0]
             self.pos[x][1]+=dt*self.vel[x][1]
-            self.pos[x][2]+=dt*self.vel[x][2]
+            self.pos[x][2]+=dt*self.vel[x][2]   
     
     @ti.func
     def detectCollision(self,pos,halfSize):

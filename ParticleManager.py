@@ -300,9 +300,11 @@ class ParticleManager:
                 for z in range(self.config.gridNumZ):
                     grid_index=self.calGridIndex(x,y,z)
                     pos=[x+0.5*self.config.gridSize,y+0.5*self.config.gridSize,z+0.5*self.config.gridSize]
-                    if self.groundManager.detectCollision(pos,self.config.gridSize*0.5)==1:
+                    if self.groundManager.detectCollision(pos,self.config.gridSize*0.5):
                         self.gridVelocity[grid_index]=self.groundManager.resolveCollision(self.gridVelocity[grid_index])
-                    if self.rigidBodyManager.detectCollision(pos,self.config.gridSize*0.5)==1:
+                    if self.groundManager.detectMovingPlane(pos,self.config.gridSize*0.5):
+                        self.gridVelocity[grid_index]=self.groundManager.resolveMovingPlane(self.gridVelocity[grid_index])
+                    if self.rigidBodyManager.detectCollision(pos,self.config.gridSize*0.5):
                         self.gridVelocity[grid_index]=self.rigidBodyManager.resolveCollision(pos,self.gridVelocity[grid_index])
 
     @ti.kernel
@@ -361,6 +363,8 @@ class ParticleManager:
             nextPos=self.pos[x]+dt*self.vel[x]
             if self.groundManager.detectCollision(nextPos,0.0):
                 self.vel[x]=self.groundManager.resolveCollision(self.vel[x])
+            if self.groundManager.detectMovingPlane(nextPos,0.0):
+                self.vel[x]=self.groundManager.resolveMovingPlane(self.vel[x])
             if self.rigidBodyManager.detectCollision(nextPos,0):
                 self.vel[x]=self.rigidBodyManager.resolveCollision(self.pos[x],self.vel[x])
 
