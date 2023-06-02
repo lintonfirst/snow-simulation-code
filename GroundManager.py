@@ -65,7 +65,7 @@ class GroundManager:
         flag=False
         for x in range(self.groundsNum[0]):
             ground=self.grounds[x]
-            if pos[0]>ground[0]-0.5*ground[2]-halfSize and pos[0]<ground[2]+0.5*ground[2]+halfSize and pos[0]>ground[0]-0.5*ground[2]-halfSize and pos[2]<ground[2]+0.5*ground[1]+halfSize and pos[1]-halfSize<1.0:
+            if pos[0]>ground[0]-0.5*ground[2]-halfSize and pos[0]<ground[2]+0.5*ground[2]+halfSize and pos[2]>ground[1]-0.5*ground[2]-halfSize and pos[2]<ground[1]+0.5*ground[2]+halfSize and pos[1]-halfSize<1.0:
                 flag=True
         return flag
     
@@ -87,7 +87,7 @@ class GroundManager:
         flag=False
         if self.enableMoingPlane:
             if pos[0]>self.planePos[0]-0.5*self.planeSize-halfSize and pos[0]<self.planePos[0]+0.5*self.planeSize+halfSize and \
-            pos[1]>self.planePos[1]-0.5*self.planeSize-halfSize and pos[1]<self.planePos[1]+0.5*self.planeSize+halfSize and ti.abs(pos[2]-self.planePos[2])<0.1+halfSize :
+            pos[1]>self.planePos[1]-0.5*self.planeSize-halfSize and pos[1]<self.planePos[1]+0.5*self.planeSize+halfSize and ti.abs(pos[2]-self.planePos[2])<0.01+halfSize :
                 flag=True
         return flag
 

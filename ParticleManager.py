@@ -105,7 +105,6 @@ class ParticleManager:
         for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
             self.gridMass[x]=0.0
             self.gridForce[x]=[0.0,0.0,0.0]
-            self.gridOldVelocity[x]=[0.0,0.0,0.0]
             self.gridVelocity[x]=[0.0,0.0,0.0]
         
     @ti.kernel
@@ -198,7 +197,7 @@ class ParticleManager:
                                 self.density[x]+=grid_mass*weight/dx3
                                
             if isFirstIteration:
-                self.volume[x]=self.mass[x]/self.density[x] 
+                self.volume[x]=self.mass[x]/self.density[x]
                                            
             
     @ti.func
@@ -347,7 +346,7 @@ class ParticleManager:
             for y in range(self.config.gridNumY):
                 for z in range(self.config.gridNumZ):
                     grid_index=self.calGridIndex(x,y,z)
-                    pos=[x+0.5*self.config.gridSize,y+0.5*self.config.gridSize,z+0.5*self.config.gridSize]
+                    pos=[(x+0.5)*self.config.gridSize,(y+0.5)*self.config.gridSize,(z+0.5)*self.config.gridSize]
                     if self.groundManager.detectCollision(pos,self.config.gridSize*0.5):
                         self.gridVelocity[grid_index]=self.groundManager.resolveCollision(self.gridVelocity[grid_index])
                     if self.groundManager.detectMovingPlane(pos,self.config.gridSize*0.5):

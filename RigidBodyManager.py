@@ -50,6 +50,7 @@ class RigidBodyManager:
     @ti.func
     def resolveCollision(self,pos,velocity):
         for x in range(self.bodyNum[0]):
+            velocity-=self.vel[x]*0.5
             normal=(pos-self.pos[x]).normalized()
             v_n=normal@velocity
             if not v_n>=0:
@@ -58,5 +59,5 @@ class RigidBodyManager:
                 if v_t_norm <= -self.config.friction_coeff*v_n:
                     velocity=[0.0,0.0,0.0]
                 else:
-                    velocity=v_t+self.config.friction_coeff*v_n/v_t_norm*v_t
+                    velocity=(v_t+self.config.friction_coeff*v_n/v_t_norm*v_t)
         return velocity

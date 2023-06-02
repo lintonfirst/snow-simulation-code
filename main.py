@@ -36,6 +36,7 @@ while window.running:
     camera.track_user_inputs(window, movement_speed=0.1, yaw_speed=0.1, pitch_speed=0.1, hold_key=ti.ui.LMB)
     scene.set_camera(camera)
     scene.point_light(pos=(8, 8,8), color=(1, 1, 1))
+    scene.point_light(pos=(8, 10,8), color=(1, 1, 1))
     if window.is_pressed(ti.ui.RETURN) or True:
         simulation.update()
     simulation.render(scene)
