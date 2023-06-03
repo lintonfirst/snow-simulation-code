@@ -83,14 +83,14 @@ class ParticleManager:
 
     def step(self,dt):
         self.clearCache()
-        
-        self.rasterizeParticles(self.firstIteration)
+        self.rasterizeParticles()
+        self.rasterizeParticles2(self.firstIteration)
         self.firstIteration=False
         self.calculateForces()
         self.updateGridVelocity(dt)
         
         self.handleGridBasedCollision(dt)
-        self.updateDeformationGradient(dt)     
+        # self.updateDeformationGradient(dt)     
         self.updateParticleVelocity()
         
         self.handleParticleBasedCollision(dt)
@@ -108,9 +108,8 @@ class ParticleManager:
             self.gridVelocity[x]=[0.0,0.0,0.0]
         
     @ti.kernel
-    def rasterizeParticles(self,isFirstIteration:bool):
+    def rasterizeParticles(self):
         dx=self.config.gridSize
-        dx3=dx*dx*dx
         idx=1.0/dx
         for x in range(self.particlesNum):
             posX=self.pos[x][0]
@@ -150,8 +149,13 @@ class ParticleManager:
                             offsetZ=posZ-dx*(grid_z+0.5)
                             weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
-                            self.gridMass[grid_index]+=weight*mass
+                            ti.atomic_add(self.gridMass[grid_index],weight*mass)
         
+    @ti.kernel
+    def rasterizeParticles2(self,isFirstIteration:bool):
+        dx=self.config.gridSize
+        dx3=dx*dx*dx
+        idx=1.0/dx
         for x in range(self.particlesNum):
             posX=self.pos[x][0]
             posY=self.pos[x][1]
@@ -192,7 +196,7 @@ class ParticleManager:
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
                             grid_mass=self.gridMass[grid_index]
                             if grid_mass>0.0 :
-                                self.gridVelocity[grid_index]+=self.vel[x]*mass*weight/grid_mass
+                                ti.atomic_add(self.gridVelocity[grid_index],self.vel[x]*mass*weight/grid_mass)
                             if isFirstIteration:
                                 self.density[x]+=grid_mass*weight/dx3
                                
@@ -217,7 +221,7 @@ class ParticleManager:
             
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             lam=self.config.lam*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
-            sigma=2.0*mu/cauchyStress*(self.plastic[x]-RE)@ti.Matrix.transpose(self.elastic[x]) + lam/cauchyStress*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
+            sigma=2.0*mu/cauchyStress*(self.plastic[x]-RE)@self.elastic[x].transpose() + lam/cauchyStress*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
             volume=self.volume[x]*plastic_determinant
             
             posX=self.pos[x][0]
@@ -258,13 +262,13 @@ class ParticleManager:
                             derivative_weight_x=calDerivative(offsetX,offsetY,offsetZ,idx)
                             derivative_weight_y=calDerivative(offsetY,offsetZ,offsetX,idx)
                             derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)                      
-                            self.gridForce[grid_index]+= - volume *sigma@ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
+                            ti.atomic_add(self.gridForce[grid_index],- volume *sigma@ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z]))
                             
         for x in range(self.config.gridNumX):
             for y in range(self.config.gridNumY):
                 for z in range(self.config.gridNumZ):
                     grid_index=self.calGridIndex(x,y,z)
-                    self.gridForce[grid_index]+=self.gridMass[grid_index]*ti.Vector([0,-9.8,0])
+                    ti.atomic_add(self.gridForce[grid_index],self.gridMass[grid_index]*ti.Vector([0,-9.8,0]))
         
             
     @ti.kernel
@@ -320,7 +324,7 @@ class ParticleManager:
                             derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)  
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
                             derivative_weight=ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
-                            grad_v+= self.gridVelocity[grid_index].outer_product(derivative_weight)
+                            ti.atomic_add(grad_v,self.gridVelocity[grid_index].outer_product(derivative_weight))
 
             elastic_next=(ti.Matrix.identity(float,3)+dt*grad_v)@self.elastic[x]
             next=elastic_next@self.plastic[x]
@@ -397,8 +401,8 @@ class ParticleManager:
                             offsetZ=posZ-dx*(grid_z+0.5)
                             weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
                             grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
-                            v_pic+=weight*self.gridVelocity[grid_index]
-                            v_flip+=weight*(self.gridVelocity[grid_index]-self.gridOldVelocity[grid_index])
+                            ti.atomic_add(v_pic,weight*self.gridVelocity[grid_index])
+                            ti.atomic_add(v_flip,weight*(self.gridVelocity[grid_index]-self.gridOldVelocity[grid_index]))
             
             self.vel[x]=(1-self.config.filp_alpha)*v_pic+self.config.filp_alpha*v_flip
             

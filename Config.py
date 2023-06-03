@@ -62,7 +62,7 @@ class PushConfig(Config):
 class ThrowConfig(Config):
     def __init__(self):
         self.frameTime=0.003
-        self.stepsPerFrame=10
+        self.stepsPerFrame=1
         self.maxParticles:int=100000
         self.gridSize:float=0.1
         self.gridNumX:int=160
@@ -75,9 +75,9 @@ class ThrowConfig(Config):
         self.lam:float=self.youngs_modulus*self.poissons_ratio/((1.0+self.poissons_ratio)* (1 - 2 * self.poissons_ratio))
         
         self.filp_alpha:float=1
-        self.friction_coeff:float=0.65
-        self.critical_compression:float=0.18
-        self.critical_stretch:float=0.04
+        self.friction_coeff:float=0.35
+        self.critical_compression:float=0.025
+        self.critical_stretch:float=0.0075
 
 class FallConfig(Config):
     def __init__(self):
