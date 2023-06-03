@@ -30,5 +30,4 @@ def calGridWeight(offsetX,offsetY,offsetZ,idx):
 
 @ti.func 
 def calDerivative(offsetX,offsetY,offsetZ,idx):
-    idx=1.0
     return d_interpolation(offsetX*idx)*interpolation(offsetY*idx)*interpolation(offsetZ*idx)

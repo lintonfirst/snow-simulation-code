@@ -74,7 +74,7 @@ class ThrowSnowBallSimulation(Simulation):
         radius=0.6
         for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+10000):
             self.particleManager.pos[x]=[8-radius+2.0*radius*ti.random(float),4-radius+2.0*radius*ti.random(float),3.0-radius+2.0*radius*ti.random(float)]
-            self.particleManager.vel[x]=[0.0,2.0,4.0]
+            self.particleManager.vel[x]=[0.0,3.0,5.0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
             self.particleManager.mass[x]=0.2
