@@ -87,11 +87,9 @@ class ParticleManager:
         self.firstIteration=False
         self.calculateForces()
         self.updateGridVelocity(dt)
-        
         self.handleGridBasedCollision(dt)
-        self.updateDeformationGradient(dt)     
+        self.updateDeformationGradient(dt)    
         self.updateParticleVelocity()
-        
         self.handleParticleBasedCollision(dt)
         self.updateParticlePosition(dt)
 
@@ -103,8 +101,8 @@ class ParticleManager:
     def clearCache(self):
         for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
             self.gridMass[x]=0.0
-            self.gridForce[x]=[0.0,0.0,0.0]
-            self.gridVelocity[x]=[0.0,0.0,0.0]
+            self.gridForce[x]=ti.Vector.zero(float, 3)
+            self.gridVelocity[x]=ti.Vector.zero(float, 3)
         
     @ti.kernel
     def rasterizeParticles(self):
@@ -118,37 +116,22 @@ class ParticleManager:
             
             # calculate gridIndex
             gridIndexX=int(posX*idx)
-            if gridIndexX<0:
-                gridIndexX=0
-            if gridIndexX>self.config.gridNumX-1:
-                gridIndexX=self.config.gridNumX-1
-            
             gridIndexY=int(posY*idx)
-            if gridIndexY<0:
-                gridIndexY=0
-            if gridIndexY>self.config.gridNumY-1:
-                gridIndexY=self.config.gridNumY-1
-                
             gridIndexZ=int(posZ*idx)
-            if gridIndexZ<0:
-                gridIndexZ=0
-            if gridIndexZ>self.config.gridNumZ-1:
-                gridIndexZ=self.config.gridNumZ-1
+
                 
             #rasterize
             if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-2 and gridIndexY < self.config.gridNumY-2 and gridIndexZ < self.config.gridNumZ-2:
-                for a in range(4):
-                    for b in range(4):
-                        for c in range(4):
-                            grid_x=gridIndexX+a-1
-                            grid_y=gridIndexY+b-1
-                            grid_z=gridIndexZ+c-1
-                            offsetX=posX-dx*grid_x
-                            offsetY=posY-dx*grid_y
-                            offsetZ=posZ-dx*grid_z
-                            weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
-                            grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
-                            ti.atomic_add(self.gridMass[grid_index],weight*mass)
+                for a,b,c in ti.ndrange(4,4,4):
+                    grid_x=gridIndexX+a-1
+                    grid_y=gridIndexY+b-1
+                    grid_z=gridIndexZ+c-1
+                    offsetX=posX-dx*grid_x
+                    offsetY=posY-dx*grid_y
+                    offsetZ=posZ-dx*grid_z
+                    weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
+                    grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
+                    ti.atomic_add(self.gridMass[grid_index],weight*mass)
         
     @ti.kernel
     def rasterizeParticles2(self,isFirstIteration:bool):
@@ -163,44 +146,28 @@ class ParticleManager:
             
             # calculate gridIndex
             gridIndexX=int(posX*idx)
-            if gridIndexX<0:
-                gridIndexX=0
-            if gridIndexX>self.config.gridNumX-1:
-                gridIndexX=self.config.gridNumX-1
-            
             gridIndexY=int(posY*idx)
-            if gridIndexY<0:
-                gridIndexY=0
-            if gridIndexY>self.config.gridNumY-1:
-                gridIndexY=self.config.gridNumY-1
-                
             gridIndexZ=int(posZ*idx)
-            if gridIndexZ<0:
-                gridIndexZ=0
-            if gridIndexZ>self.config.gridNumZ-1:
-                gridIndexZ=self.config.gridNumZ-1
-                
+
             if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-2 and gridIndexY < self.config.gridNumY-2 and gridIndexZ < self.config.gridNumZ-2:
-                for a in range(4):
-                    for b in range(4):
-                        for c in range(4):
-                            grid_x=gridIndexX+a-1
-                            grid_y=gridIndexY+b-1
-                            grid_z=gridIndexZ+c-1
-                            offsetX=posX-dx*grid_x
-                            offsetY=posY-dx*grid_y
-                            offsetZ=posZ-dx*grid_z
-                                        
-                            weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
-                            grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
-                            grid_mass=self.gridMass[grid_index]
-                            if grid_mass>0.0 :
-                                ti.atomic_add(self.gridVelocity[grid_index],self.vel[x]*mass*weight/grid_mass)
-                            if isFirstIteration:
-                                self.density[x]+=grid_mass*weight/dx3
-                               
+                for a,b,c in ti.ndrange(4,4,4):
+                    grid_x=gridIndexX+a-1
+                    grid_y=gridIndexY+b-1
+                    grid_z=gridIndexZ+c-1
+                    offsetX=posX-dx*grid_x
+                    offsetY=posY-dx*grid_y
+                    offsetZ=posZ-dx*grid_z
+                                
+                    weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
+                    grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
+                    grid_mass=self.gridMass[grid_index]
+                    if grid_mass>0.0 :
+                        ti.atomic_add(self.gridVelocity[grid_index],self.vel[x]*mass*weight/grid_mass)
+                    if isFirstIteration:
+                        ti.atomic_add(self.density[x],grid_mass*weight/dx3)                 
             if isFirstIteration:
-                self.volume[x]=self.mass[x]/self.density[x]
+                # self.volume[x]=self.mass[x]/self.density[x]
+                self.volume[x]=dx3
                                            
             
     @ti.func
@@ -213,7 +180,7 @@ class ParticleManager:
         idx=1.0/dx
         for x in range(self.particlesNum):
             plastic_determinant=self.plastic[x].determinant()
-            elastic_determinant=self.plastic[x].determinant()
+            elastic_determinant=self.elastic[x].determinant()
             RE, SE = ti.polar_decompose(self.elastic[x])
                         
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
@@ -221,6 +188,7 @@ class ParticleManager:
             sigma=2.0*mu*(self.plastic[x]-RE)@self.elastic[x].transpose() + lam*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
             # sigma/=plastic_determinant*elastic_determinant
             volume=self.volume[x]*plastic_determinant
+            # volume=self.volume[x]
             
             posX=self.pos[x][0]
             posY=self.pos[x][1]
@@ -229,49 +197,31 @@ class ParticleManager:
             
             # calculate gridIndex
             gridIndexX=int(posX*idx)
-            if gridIndexX<0:
-                gridIndexX=0
-            if gridIndexX>self.config.gridNumX-1:
-                gridIndexX=self.config.gridNumX-1
-            
             gridIndexY=int(posY*idx)
-            if gridIndexY<0:
-                gridIndexY=0
-            if gridIndexY>self.config.gridNumY-1:
-                gridIndexY=self.config.gridNumY-1
-                
             gridIndexZ=int(posZ*idx)
-            if gridIndexZ<0:
-                gridIndexZ=0
-            if gridIndexZ>self.config.gridNumZ-1:
-                gridIndexZ=self.config.gridNumZ-1
 
             if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-2 and gridIndexY < self.config.gridNumY-2 and gridIndexZ < self.config.gridNumZ-2:
-                for a in range(4):
-                    for b in range(4):
-                        for c in range(4):
-                            grid_x=gridIndexX+a-1
-                            grid_y=gridIndexY+b-1
-                            grid_z=gridIndexZ+c-1
-                            offsetX=posX-dx*grid_x
-                            offsetY=posY-dx*grid_y
-                            offsetZ=posZ-dx*grid_z
-                            grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
-                            derivative_weight_x=calDerivative(offsetX,offsetY,offsetZ,idx)
-                            derivative_weight_y=calDerivative(offsetY,offsetZ,offsetX,idx)
-                            derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)                      
-                            ti.atomic_add(self.gridForce[grid_index],- volume *sigma@ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z]))
+                for a,b,c in ti.ndrange(4,4,4):
+                    grid_x=gridIndexX+a-1
+                    grid_y=gridIndexY+b-1
+                    grid_z=gridIndexZ+c-1
+                    offsetX=posX-dx*grid_x
+                    offsetY=posY-dx*grid_y
+                    offsetZ=posZ-dx*grid_z
+                    grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
+                    derivative_weight_x=calDerivative(offsetX,offsetY,offsetZ,idx)
+                    derivative_weight_y=calDerivative(offsetY,offsetZ,offsetX,idx)
+                    derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)                      
+                    ti.atomic_add(self.gridForce[grid_index],- 10*volume *sigma@ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z]))
                             
-        for x in range(self.config.gridNumX):
-            for y in range(self.config.gridNumY):
-                for z in range(self.config.gridNumZ):
-                    grid_index=self.calGridIndex(x,y,z)
-                    ti.atomic_add(self.gridForce[grid_index],self.gridMass[grid_index]*ti.Vector([0,-9.8,0]))
+        for x,y,z in ti.ndrange(self.config.gridNumX,self.config.gridNumY,self.config.gridNumZ):
+            grid_index=self.calGridIndex(x,y,z)
+            ti.atomic_add(self.gridForce[grid_index],self.gridMass[grid_index]*ti.Vector([0,-9.8,0]))
         
             
     @ti.kernel
     def updateGridVelocity(self, dt:float):
-        for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
+        for x in ti.ndrange(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
             self.gridOldVelocity[x]=self.gridVelocity[x]
             if self.gridMass[x]==0.0:
                 self.gridVelocity[x]=[0,0,0]
@@ -290,40 +240,24 @@ class ParticleManager:
             
             # calculate gridIndex
             gridIndexX=int(posX*idx)
-            if gridIndexX<0:
-                gridIndexX=0
-            if gridIndexX>self.config.gridNumX-1:
-                gridIndexX=self.config.gridNumX-1
-            
-            gridIndexY=int(posY*idx)
-            if gridIndexY<0:
-                gridIndexY=0
-            if gridIndexY>self.config.gridNumY-1:
-                gridIndexY=self.config.gridNumY-1
-                
+            gridIndexY=int(posY*idx)                
             gridIndexZ=int(posZ*idx)
-            if gridIndexZ<0:
-                gridIndexZ=0
-            if gridIndexZ>self.config.gridNumZ-1:
-                gridIndexZ=self.config.gridNumZ-1
             
             if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-2 and gridIndexY < self.config.gridNumY-2 and gridIndexZ < self.config.gridNumZ-2:
-                for a in range(4):
-                    for b in range(4):
-                        for c in range(4):
-                            grid_x=gridIndexX+a-1
-                            grid_y=gridIndexY+b-1
-                            grid_z=gridIndexZ+c-1
-                            offsetX=posX-dx*grid_x
-                            offsetY=posY-dx*grid_y
-                            offsetZ=posZ-dx*grid_z
-                            derivative_weight_x=calDerivative(offsetX,offsetY,offsetZ,idx)
-                            derivative_weight_y=calDerivative(offsetY,offsetZ,offsetX,idx)
-                            derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)  
-                            grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
-                            derivative_weight=ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
-                            ti.atomic_add(grad_v,self.gridVelocity[grid_index].outer_product(derivative_weight))
-
+                for a,b,c in ti.ndrange(4,4,4):
+                    grid_x=gridIndexX+a-1
+                    grid_y=gridIndexY+b-1
+                    grid_z=gridIndexZ+c-1
+                    offsetX=posX-dx*grid_x
+                    offsetY=posY-dx*grid_y
+                    offsetZ=posZ-dx*grid_z
+                    derivative_weight_x=calDerivative(offsetX,offsetY,offsetZ,idx)
+                    derivative_weight_y=calDerivative(offsetY,offsetZ,offsetX,idx)
+                    derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)  
+                    grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
+                    derivative_weight=ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
+                    ti.atomic_add(grad_v,self.gridVelocity[grid_index].outer_product(derivative_weight))
+            
             elastic_next=(ti.Matrix.identity(float,3)+dt*grad_v)@self.elastic[x]
             next=elastic_next@self.plastic[x]
             U,S,V=ti.svd(elastic_next)
@@ -344,17 +278,15 @@ class ParticleManager:
     @ti.kernel
     def handleGridBasedCollision(self,dt:float):
         # 地面
-        for x in range(self.config.gridNumX):
-            for y in range(self.config.gridNumY):
-                for z in range(self.config.gridNumZ):
-                    grid_index=self.calGridIndex(x,y,z)
-                    pos=[x*self.config.gridSize,y*self.config.gridSize,z*self.config.gridSize]
-                    if self.groundManager.detectCollision(pos,0):
-                        self.gridVelocity[grid_index]=self.groundManager.resolveCollision(self.gridVelocity[grid_index])
-                    if self.groundManager.detectMovingPlane(pos,0):
-                        self.gridVelocity[grid_index]=self.groundManager.resolveMovingPlane(self.gridVelocity[grid_index])
-                    if self.rigidBodyManager.detectCollision(pos,0):
-                        self.gridVelocity[grid_index]=self.rigidBodyManager.resolveCollision(pos,self.gridVelocity[grid_index])
+        for x,y,z in ti.ndrange(self.config.gridNumX,self.config.gridNumY,self.config.gridNumZ):
+            grid_index=self.calGridIndex(x,y,z)
+            pos=[x*self.config.gridSize,y*self.config.gridSize,z*self.config.gridSize]
+            if self.groundManager.detectCollision(pos,0.05):
+                self.gridVelocity[grid_index]=self.groundManager.resolveCollision(self.gridVelocity[grid_index])
+            if self.groundManager.detectMovingPlane(pos,0):
+                self.gridVelocity[grid_index]=self.groundManager.resolveMovingPlane(self.gridVelocity[grid_index])
+            if self.rigidBodyManager.detectCollision(pos,0):
+                self.gridVelocity[grid_index]=self.rigidBodyManager.resolveCollision(pos,self.gridVelocity[grid_index])
 
     @ti.kernel
     def updateParticleVelocity(self):
@@ -367,50 +299,34 @@ class ParticleManager:
             
             # calculate gridIndex
             gridIndexX=int(posX*idx)
-            if gridIndexX<0:
-                gridIndexX=0
-            if gridIndexX>self.config.gridNumX-1:
-                gridIndexX=self.config.gridNumX-1
-            
             gridIndexY=int(posY*idx)
-            if gridIndexY<0:
-                gridIndexY=0
-            if gridIndexY>self.config.gridNumY-1:
-                gridIndexY=self.config.gridNumY-1
-                
             gridIndexZ=int(posZ*idx)
-            if gridIndexZ<0:
-                gridIndexZ=0
-            if gridIndexZ>self.config.gridNumZ-1:
-                gridIndexZ=self.config.gridNumZ-1
             
             v_pic=ti.Vector([0.0,0.0,0.0])
             v_flip=self.vel[x]
             
             if gridIndexX >=1 and gridIndexY >=1 and gridIndexZ >=1 and gridIndexX < self.config.gridNumX-2 and gridIndexY < self.config.gridNumY-2 and gridIndexZ < self.config.gridNumZ-2:
-                for a in range(4):
-                    for b in range(4):
-                        for c in range(4):
-                            grid_x=gridIndexX+a-1
-                            grid_y=gridIndexY+b-1
-                            grid_z=gridIndexZ+c-1
-                            offsetX=posX-dx*grid_x
-                            offsetY=posY-dx*grid_y
-                            offsetZ=posZ-dx*grid_z
-                            weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
-                            grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
-                            ti.atomic_add(v_pic,weight*self.gridVelocity[grid_index])
-                            ti.atomic_add(v_flip,weight*(self.gridVelocity[grid_index]-self.gridOldVelocity[grid_index]))
-            
+                for a,b,c in ti.ndrange(4,4,4):
+                    grid_x=gridIndexX+a-1
+                    grid_y=gridIndexY+b-1
+                    grid_z=gridIndexZ+c-1
+                    offsetX=posX-dx*grid_x
+                    offsetY=posY-dx*grid_y
+                    offsetZ=posZ-dx*grid_z
+                    weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
+                    grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
+                    ti.atomic_add(v_pic,weight*self.gridVelocity[grid_index])
+                    ti.atomic_add(v_flip,weight*(self.gridVelocity[grid_index]-self.gridOldVelocity[grid_index]))
+    
             self.vel[x]=(1-self.config.filp_alpha)*v_pic+self.config.filp_alpha*v_flip
             
 
     @ti.kernel
     def handleParticleBasedCollision(self,dt:float):
         # 地面
-        for x in range(self.particlesNum):
+        for x in ti.ndrange(self.particlesNum):
             nextPos=self.pos[x]+dt*self.vel[x]
-            if self.groundManager.detectCollision(nextPos,0.0):
+            if self.groundManager.detectCollision(nextPos,0.05):
                 self.vel[x]=self.groundManager.resolveCollision(self.vel[x])
             if self.groundManager.detectMovingPlane(nextPos,0.0):
                 self.vel[x]=self.groundManager.resolveMovingPlane(self.vel[x])
@@ -419,5 +335,5 @@ class ParticleManager:
 
     @ti.kernel
     def updateParticlePosition(self,dt:float):
-        for x in range(self.particlesNum):
+        for x in ti.ndrange(self.particlesNum):
             self.pos[x]+=dt*self.vel[x]
