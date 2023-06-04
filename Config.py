@@ -81,8 +81,8 @@ class ThrowConfig(Config):
 
 class CollideConfig(Config):
     def __init__(self):
-        self.frameTime=0.016
-        self.stepsPerFrame=30
+        self.frameTime=0.0016
+        self.stepsPerFrame=50
         self.maxParticles:int=100000
         self.gridSize:float=0.1
         self.gridNumX:int=160
