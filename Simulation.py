@@ -1,7 +1,7 @@
 from ParticleManager import ParticleManager
 from RigidBodyManager import RigidBodyManager
 from GroundManager import GroundManager
-from Config import Config,BasicConfig,FallConfig,ThrowConfig,RigidBodyConfig,PushConfig
+from Config import Config,BasicConfig,FallConfig,ThrowConfig,RigidBodyConfig,PushConfig,CollideConfig
 import taichi as ti
 
 
@@ -160,6 +160,37 @@ class PushPlaneSimulation(Simulation):
             self.particleManager.vel[x]=[0.0,0.0,0.0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
+            self.particleManager.mass[x]=0.2
+            self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
+            self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
+
+@ti.data_oriented
+class SnowBallCollideSimulation(Simulation):
+    def __init__(self):
+        config=CollideConfig()
+        super(SnowBallCollideSimulation,self).__init__(config)
+        self.init()
+        self.particleManager.particlesNum+=4000
+        self.particleManager.particlesNum+=4000
+    
+    @ti.kernel
+    def init(self):
+        # 添加平面
+        self.groundManager.addGround(8,8,16)
+        
+        radius=0.8
+        # 添加雪的粒子
+        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+4000):
+            self.particleManager.pos[x]=[8-radius+2.0*radius*ti.random(float),4.5-radius+2.0*radius*ti.random(float),12.0-radius+2.0*radius*ti.random(float)]
+            self.particleManager.vel[x]=[0.0,2.0,-6.0]
+            self.particleManager.mass[x]=0.2
+            self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
+            self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
+        
+        
+        for x in range(self.particleManager.particlesNum+4000,self.particleManager.particlesNum+8000):
+            self.particleManager.pos[x]=[7.5-radius+2.0*radius*ti.random(float),4-radius+2.0*radius*ti.random(float),5.0-radius+2.0*radius*ti.random(float)]
+            self.particleManager.vel[x]=[0.0,2.0,3.0]
             self.particleManager.mass[x]=0.2
             self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
             self.particleManager.elastic[x]=ti.Matrix.identity(float,3)

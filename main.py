@@ -1,6 +1,6 @@
 import taichi as ti
 import argparse
-from Simulation import BasicSimulation,ThrowSnowBallSimulation,RigidBodyFallSimulation,SnowBallFallSimulation,PushPlaneSimulation
+from Simulation import BasicSimulation,ThrowSnowBallSimulation,RigidBodyFallSimulation,SnowBallFallSimulation,PushPlaneSimulation,SnowBallCollideSimulation
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--scene',required=False,default='basic')
@@ -18,6 +18,8 @@ elif simulationScene=="rigidbody":
     simulation=RigidBodyFallSimulation()
 elif simulationScene=="push":
     simulation=PushPlaneSimulation()
+elif simulationScene=="collide":
+    simulation=SnowBallCollideSimulation()
 else:
     simulation=BasicSimulation()
 
