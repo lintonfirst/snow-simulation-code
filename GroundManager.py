@@ -92,6 +92,7 @@ class GroundManager:
         return flag
 
     @ti.func
-    def resolveMovingPlane(self,velocity):
-        velocity[2]=-self.planeVel
+    def resolveMovingPlane(self,pos,velocity):
+        if pos[2]<self.planePos[2]:
+            velocity[2]=-self.planeVel
         return velocity

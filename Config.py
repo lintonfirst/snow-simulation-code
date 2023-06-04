@@ -82,7 +82,7 @@ class ThrowConfig(Config):
 class FallConfig(Config):
     def __init__(self):
         self.frameTime=0.0016
-        self.stepsPerFrame=20
+        self.stepsPerFrame=30
         self.maxParticles:int=100000
         self.gridSize:float=0.1
         self.gridNumX:int=160

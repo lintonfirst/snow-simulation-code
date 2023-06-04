@@ -185,9 +185,9 @@ class ParticleManager:
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             lam=self.config.lam*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             sigma=2.0*mu*(self.plastic[x]-RE)@self.elastic[x].transpose() + lam*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
-            sigma/=plastic_determinant*elastic_determinant
-            volume=self.volume[x]*plastic_determinant
-            # volume=self.volume[x]
+            # sigma/=plastic_determinant*elastic_determinant
+            # volume=self.volume[x]*plastic_determinant
+            volume=self.volume[x]
             
             posX=self.pos[x][0]
             posY=self.pos[x][1]
@@ -278,7 +278,7 @@ class ParticleManager:
             if self.groundManager.detectCollision(pos,0.0):
                 self.gridVelocity[grid_index]=self.groundManager.resolveCollision(self.gridVelocity[grid_index])
             if self.groundManager.detectMovingPlane(pos,0):
-                self.gridVelocity[grid_index]=self.groundManager.resolveMovingPlane(self.gridVelocity[grid_index])
+                self.gridVelocity[grid_index]=self.groundManager.resolveMovingPlane(pos,self.gridVelocity[grid_index])
             if self.rigidBodyManager.detectCollision(pos,0):
                 self.gridVelocity[grid_index]=self.rigidBodyManager.resolveCollision(pos,self.gridVelocity[grid_index])
 
@@ -313,7 +313,11 @@ class ParticleManager:
                     ti.atomic_add(v_flip,weight*(self.gridVelocity[grid_index]-self.gridOldVelocity[grid_index]))
     
             self.vel[x]=(1-self.config.filp_alpha)*v_pic+self.config.filp_alpha*v_flip
-            
+            for i in range(3):
+                if(self.vel[x][i]>10.0):
+                    self.vel[x][i]=10.0
+                if(self.vel[x][i]<-10.0):
+                    self.vel[x][i]=-10.0
 
     @ti.kernel
     def handleParticleBasedCollision(self,dt:float):
@@ -323,7 +327,7 @@ class ParticleManager:
             if self.groundManager.detectCollision(nextPos,0.0):
                 self.vel[x]=self.groundManager.resolveCollision(self.vel[x])
             if self.groundManager.detectMovingPlane(nextPos,0.0):
-                self.vel[x]=self.groundManager.resolveMovingPlane(self.vel[x])
+                self.vel[x]=self.groundManager.resolveMovingPlane(self.pos[x],self.vel[x])
             if self.rigidBodyManager.detectCollision(nextPos,0):
                 self.vel[x]=self.rigidBodyManager.resolveCollision(self.pos[x],self.vel[x])
 
