@@ -15,9 +15,9 @@ class GroundManager:
         self.planePos=ti.field(float,shape=3)
         self.planePos[0]=8.0
         self.planePos[1]=3.0
-        self.planePos[2]=20.0
+        self.planePos[2]=12.0
         self.planeEndZ=8.0
-        self.planeVel=20.0
+        self.planeVel=1.0
         self.planeSize=5.0
         self.planeVertex=ti.Vector.field(3,dtype=float,shape=4)
         self.planeColor=ti.Vector.field(3,dtype=float,shape=1)
@@ -87,7 +87,7 @@ class GroundManager:
         flag=False
         if self.enableMoingPlane:
             if pos[0]>self.planePos[0]-0.5*self.planeSize-halfSize and pos[0]<self.planePos[0]+0.5*self.planeSize+halfSize and \
-            pos[1]>self.planePos[1]-0.5*self.planeSize-halfSize and pos[1]<self.planePos[1]+0.5*self.planeSize+halfSize and ti.abs(pos[2]-self.planePos[2])<0.01+halfSize :
+            pos[1]>self.planePos[1]-0.5*self.planeSize-halfSize and pos[1]<self.planePos[1]+0.5*self.planeSize+halfSize and ti.abs(pos[2]-self.planePos[2])<0.05+halfSize :
                 flag=True
         return flag
 

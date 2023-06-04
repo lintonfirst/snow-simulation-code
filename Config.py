@@ -40,7 +40,7 @@ class BasicConfig(Config):
 
 class PushConfig(Config):
     def __init__(self):
-        self.frameTime=0.00016
+        self.frameTime=0.0016
         self.stepsPerFrame=20
         self.maxParticles:int=100000
         self.gridSize:float=0.1
@@ -53,7 +53,7 @@ class PushConfig(Config):
         self.mu:float=self.youngs_modulus/(2.0*(1.0+self.poissons_ratio))
         self.lam:float=self.youngs_modulus*self.poissons_ratio/((1.0+self.poissons_ratio)* (1 - 2 * self.poissons_ratio))
         
-        self.filp_alpha:float=0.95
+        self.filp_alpha:float=0.88
         self.friction_coeff:float=0.35
         self.critical_compression:float=0.025
         self.critical_stretch:float=0.0075
@@ -114,7 +114,7 @@ class RigidBodyConfig(Config):
         self.mu:float=self.youngs_modulus/(2.0*(1.0+self.poissons_ratio))
         self.lam:float=self.youngs_modulus*self.poissons_ratio/((1.0+self.poissons_ratio)* (1 - 2 * self.poissons_ratio))
         
-        self.filp_alpha:float=0.95
+        self.filp_alpha:float=0.88
         self.friction_coeff:float=0.35
         self.critical_compression:float=0.025
         self.critical_stretch:float=0.0075

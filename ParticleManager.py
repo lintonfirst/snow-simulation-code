@@ -253,38 +253,19 @@ class ParticleManager:
                     derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)  
                     grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
                     derivative_weight=ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
-                    ti.atomic_add(grad_v,self.gridVelocity[grid_index].outer_product(derivative_weight))
+                    ti.atomic_add(grad_v,self.gridVelocity[grid_index].outer_product(derivative_weight))            
             
-            FE = self.elastic[x]
-            FP = self.plastic[x]
-            I = ti.Matrix.identity(float, 3)
-
-            FE = (I + dt * grad_v) @ FE
-            F = FE @ FP
-
-            U, S, V = ti.svd(FE)
-            for t in ti.static(range(3)):
-                S[t, t] = ti.math.clamp(S[t, t], 1 - self.config.critical_compression, 1 + self.config.critical_stretch)
-
-            self.elastic[x] = U @ S @ V.transpose()
-            self.plastic[x] = V @ S.inverse() @ U.transpose() @ F
-            
-            
-            # elastic_next=(ti.Matrix.identity(float,3)+dt*grad_v)@self.elastic[x]
-            # next=elastic_next@self.plastic[x]
-            # U,S,V=ti.svd(elastic_next)
-            # min=1-self.config.critical_compression
-            # max=1+self.config.critical_stretch
-            # sigma=ti.Matrix.identity(float,3)
-            # inv_sigma=ti.Matrix.identity(float,3)
-            # sigma[0,0]=ti.math.clamp(S[0,0],min,max)
-            # sigma[1,1]=ti.math.clamp(S[1,1],min,max)
-            # sigma[2,2]=ti.math.clamp(S[2,2],min,max)
-            # inv_sigma[0,0]=1.0/ti.math.clamp(S[0,0],min,max)
-            # inv_sigma[1,1]=1.0/ti.math.clamp(S[1,1],min,max)
-            # inv_sigma[2,2]=1.0/ti.math.clamp(S[2,2],min,max)
-            # self.elastic[x]=U@sigma@V.transpose()
-            # self.plastic[x]=V@inv_sigma@U.transpose()@next
+            elastic_next=(ti.Matrix.identity(float,3)+dt*grad_v)@self.elastic[x]
+            next=elastic_next@self.plastic[x]
+            U,S,V=ti.svd(elastic_next)
+            min=1-self.config.critical_compression
+            max=1+self.config.critical_stretch
+            sigma=ti.Matrix.identity(float,3)
+            sigma[0,0]=ti.math.clamp(S[0,0],min,max)
+            sigma[1,1]=ti.math.clamp(S[1,1],min,max)
+            sigma[2,2]=ti.math.clamp(S[2,2],min,max)
+            self.elastic[x]=U@sigma@V.transpose()
+            self.plastic[x]=V@sigma.inverse()@U.transpose()@next
             
             
 

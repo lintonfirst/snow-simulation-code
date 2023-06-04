@@ -94,7 +94,7 @@ class RigidBodyFallSimulation(Simulation):
         self.groundManager.addGround(8,8,16)
         
         # 添加球形刚体 
-        self.rigidBodyManager.addRigidBody(ti.Vector([8,3,8]),ti.Vector([0,0,0]),0.6,1)
+        self.rigidBodyManager.addRigidBody(ti.Vector([8,5,8]),ti.Vector([0,0,0]),0.6,1)
         
         # 添加雪的粒子
         for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+20000):
