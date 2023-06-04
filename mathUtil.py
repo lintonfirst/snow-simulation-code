@@ -7,7 +7,7 @@ def interpolation(x):
     abs_x=ti.abs(x)
     if abs_x<=1:
         res=0.5*abs_x*x*x-x*x+2.0/3.0
-    else:
+    elif abs_x<2:
         res=-abs_x*x*x/6.0+x*x-2.0*abs_x+4.0/3.0
     return res
 
@@ -17,7 +17,7 @@ def d_interpolation(x):
     abs_x=ti.abs(x)
     if abs_x<=1:
         res=1.5*x*abs_x-2*x
-    else:
+    elif abs_x<=2:
         res=-0.5*abs_x*x+2*x-2.0*x/abs_x
     return res
 
@@ -30,4 +30,4 @@ def calGridWeight(offsetX,offsetY,offsetZ,idx):
 
 @ti.func 
 def calDerivative(offsetX,offsetY,offsetZ,idx):
-    return d_interpolation(offsetX*idx)*interpolation(offsetY*idx)*interpolation(offsetZ*idx)
+    return d_interpolation(offsetX*idx)*interpolation(offsetY*idx)*interpolation(offsetZ*idx)*idx

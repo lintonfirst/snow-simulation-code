@@ -17,6 +17,7 @@ class Simulation:
  
     def update(self):
         dt=self.config.frameTime
+        
         for x in range(self.config.stepsPerFrame):
             self.groundManager.step(dt/self.config.stepsPerFrame)
             self.rigidBodyManager.step(dt/self.config.stepsPerFrame)

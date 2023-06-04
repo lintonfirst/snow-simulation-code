@@ -30,7 +30,6 @@ camera = ti.ui.Camera()
 camera.position(17,3,8)
 camera.lookat(8,0.5,8)
 
-
 print("begin frame")
 while window.running:
     camera.track_user_inputs(window, movement_speed=0.1, yaw_speed=0.1, pitch_speed=0.1, hold_key=ti.ui.LMB)

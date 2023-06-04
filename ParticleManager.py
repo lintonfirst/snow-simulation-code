@@ -83,7 +83,8 @@ class ParticleManager:
     def step(self,dt):
         self.clearCache()
         self.rasterizeParticles()
-        self.rasterizeParticles2(self.firstIteration)
+        if self.firstIteration:
+            self.calVolumes()
         self.firstIteration=False
         self.calculateForces()
         self.updateGridVelocity(dt)
@@ -132,19 +133,21 @@ class ParticleManager:
                     weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
                     grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
                     ti.atomic_add(self.gridMass[grid_index],weight*mass)
+                    ti.atomic_add(self.gridVelocity[grid_index],self.vel[x]*mass*weight)
+        
+        for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
+            if self.gridMass[x]>0:
+                self.gridVelocity[x]/=self.gridMass[x]
         
     @ti.kernel
-    def rasterizeParticles2(self,isFirstIteration:bool):
+    def calVolumes(self):
         dx=self.config.gridSize
         dx3=dx*dx*dx
         idx=1.0/dx
-        for x in range(self.particlesNum):
+        for x in range(self.particlesNum):            
             posX=self.pos[x][0]
             posY=self.pos[x][1]
             posZ=self.pos[x][2]
-            mass=self.mass[x]
-            
-            # calculate gridIndex
             gridIndexX=int(posX*idx)
             gridIndexY=int(posY*idx)
             gridIndexZ=int(posZ*idx)
@@ -161,14 +164,9 @@ class ParticleManager:
                     weight=calGridWeight(offsetX,offsetY,offsetZ,idx)
                     grid_index=self.calGridIndex(grid_x,grid_y,grid_z)
                     grid_mass=self.gridMass[grid_index]
-                    if grid_mass>0.0 :
-                        ti.atomic_add(self.gridVelocity[grid_index],self.vel[x]*mass*weight/grid_mass)
-                    if isFirstIteration:
-                        ti.atomic_add(self.density[x],grid_mass*weight/dx3)                 
-            if isFirstIteration:
-                # self.volume[x]=self.mass[x]/self.density[x]
-                self.volume[x]=dx3
-                                           
+                    ti.atomic_add(self.density[x],grid_mass*weight/dx3)                 
+            self.volume[x]=self.mass[x]/self.density[x] 
+            print(self.volume[x])                                      
             
     @ti.func
     def calGridIndex(self,x,y,z):
@@ -188,7 +186,7 @@ class ParticleManager:
             sigma=2.0*mu*(self.plastic[x]-RE)@self.elastic[x].transpose() + lam*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
             # sigma/=plastic_determinant*elastic_determinant
             volume=self.volume[x]*plastic_determinant
-            # volume=self.volume[x]
+            volume=self.volume[x]
             
             posX=self.pos[x][0]
             posY=self.pos[x][1]
@@ -214,9 +212,8 @@ class ParticleManager:
                     derivative_weight_z=calDerivative(offsetZ,offsetX,offsetY,idx)                      
                     ti.atomic_add(self.gridForce[grid_index],- 10*volume *sigma@ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z]))
                             
-        for x,y,z in ti.ndrange(self.config.gridNumX,self.config.gridNumY,self.config.gridNumZ):
-            grid_index=self.calGridIndex(x,y,z)
-            ti.atomic_add(self.gridForce[grid_index],self.gridMass[grid_index]*ti.Vector([0,-9.8,0]))
+        for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
+            ti.atomic_add(self.gridForce[x],self.gridMass[x]*ti.Vector([0,-9.8,0]))
         
             
     @ti.kernel
