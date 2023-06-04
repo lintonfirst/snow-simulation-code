@@ -185,9 +185,9 @@ class ParticleManager:
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             lam=self.config.lam*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             sigma=2.0*mu*(self.plastic[x]-RE)@self.elastic[x].transpose() + lam*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
-            # sigma/=plastic_determinant*elastic_determinant
+            sigma/=plastic_determinant*elastic_determinant
             volume=self.volume[x]*plastic_determinant
-            volume=self.volume[x]
+            # volume=self.volume[x]
             
             posX=self.pos[x][0]
             posY=self.pos[x][1]
@@ -215,15 +215,14 @@ class ParticleManager:
                             
         for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
             ti.atomic_add(self.gridForce[x],self.gridMass[x]*ti.Vector([0,-9.8,0]))
+            
         
             
     @ti.kernel
     def updateGridVelocity(self, dt:float):
-        for x in ti.ndrange(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
-            self.gridOldVelocity[x]=self.gridVelocity[x]
-            if self.gridMass[x]==0.0:
-                self.gridVelocity[x]=[0,0,0]
-            else:
+        for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
+            if self.gridMass[x]>0.0:
+                self.gridOldVelocity[x]=self.gridVelocity[x]
                 self.gridVelocity[x]+=dt*self.gridForce[x]/self.gridMass[x]
 
     @ti.kernel
@@ -256,21 +255,37 @@ class ParticleManager:
                     derivative_weight=ti.Vector([derivative_weight_x,derivative_weight_y,derivative_weight_z])
                     ti.atomic_add(grad_v,self.gridVelocity[grid_index].outer_product(derivative_weight))
             
-            elastic_next=(ti.Matrix.identity(float,3)+dt*grad_v)@self.elastic[x]
-            next=elastic_next@self.plastic[x]
-            U,S,V=ti.svd(elastic_next)
-            min=1-self.config.critical_compression
-            max=1+self.config.critical_stretch
-            sigma=ti.Matrix.identity(float,3)
-            inv_sigma=ti.Matrix.identity(float,3)
-            sigma[0,0]=ti.math.clamp(S[0,0],min,max)
-            sigma[1,1]=ti.math.clamp(S[1,1],min,max)
-            sigma[2,2]=ti.math.clamp(S[2,2],min,max)
-            inv_sigma[0,0]=1.0/ti.math.clamp(S[0,0],min,max)
-            inv_sigma[1,1]=1.0/ti.math.clamp(S[1,1],min,max)
-            inv_sigma[2,2]=1.0/ti.math.clamp(S[2,2],min,max)
-            self.elastic[x]=U@sigma@V.transpose()
-            self.plastic[x]=V@inv_sigma@U.transpose()@next
+            FE = self.elastic[x]
+            FP = self.plastic[x]
+            I = ti.Matrix.identity(float, 3)
+
+            FE = (I + dt * grad_v) @ FE
+            F = FE @ FP
+
+            U, S, V = ti.svd(FE)
+            for t in ti.static(range(3)):
+                S[t, t] = ti.math.clamp(S[t, t], 1 - self.config.critical_compression, 1 + self.config.critical_stretch)
+
+            self.elastic[x] = U @ S @ V.transpose()
+            self.plastic[x] = V @ S.inverse() @ U.transpose() @ F
+            
+            
+            # elastic_next=(ti.Matrix.identity(float,3)+dt*grad_v)@self.elastic[x]
+            # next=elastic_next@self.plastic[x]
+            # U,S,V=ti.svd(elastic_next)
+            # min=1-self.config.critical_compression
+            # max=1+self.config.critical_stretch
+            # sigma=ti.Matrix.identity(float,3)
+            # inv_sigma=ti.Matrix.identity(float,3)
+            # sigma[0,0]=ti.math.clamp(S[0,0],min,max)
+            # sigma[1,1]=ti.math.clamp(S[1,1],min,max)
+            # sigma[2,2]=ti.math.clamp(S[2,2],min,max)
+            # inv_sigma[0,0]=1.0/ti.math.clamp(S[0,0],min,max)
+            # inv_sigma[1,1]=1.0/ti.math.clamp(S[1,1],min,max)
+            # inv_sigma[2,2]=1.0/ti.math.clamp(S[2,2],min,max)
+            # self.elastic[x]=U@sigma@V.transpose()
+            # self.plastic[x]=V@inv_sigma@U.transpose()@next
+            
             
 
     @ti.kernel
@@ -279,7 +294,7 @@ class ParticleManager:
         for x,y,z in ti.ndrange(self.config.gridNumX,self.config.gridNumY,self.config.gridNumZ):
             grid_index=self.calGridIndex(x,y,z)
             pos=[x*self.config.gridSize,y*self.config.gridSize,z*self.config.gridSize]
-            if self.groundManager.detectCollision(pos,0.05):
+            if self.groundManager.detectCollision(pos,0.0):
                 self.gridVelocity[grid_index]=self.groundManager.resolveCollision(self.gridVelocity[grid_index])
             if self.groundManager.detectMovingPlane(pos,0):
                 self.gridVelocity[grid_index]=self.groundManager.resolveMovingPlane(self.gridVelocity[grid_index])
@@ -324,7 +339,7 @@ class ParticleManager:
         # 地面
         for x in ti.ndrange(self.particlesNum):
             nextPos=self.pos[x]+dt*self.vel[x]
-            if self.groundManager.detectCollision(nextPos,0.05):
+            if self.groundManager.detectCollision(nextPos,0.0):
                 self.vel[x]=self.groundManager.resolveCollision(self.vel[x])
             if self.groundManager.detectMovingPlane(nextPos,0.0):
                 self.vel[x]=self.groundManager.resolveMovingPlane(self.vel[x])

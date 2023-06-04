@@ -113,7 +113,7 @@ class SnowBallFallSimulation(Simulation):
         super(SnowBallFallSimulation,self).__init__(config)
         self.init()
         self.particleManager.particlesNum+=20000
-        # self.particleManager.particlesNum+=4000
+        self.particleManager.particlesNum+=4000
     
     @ti.kernel
     def init(self):
@@ -121,19 +121,19 @@ class SnowBallFallSimulation(Simulation):
         self.groundManager.addGround(8,8,16)
         
         # 添加雪的粒子
-        # for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+20000):
-        #     self.particleManager.pos[x]=[ti.random(float) * 6.4 + 4.8,1.0+ti.random(float)  * 1.0,ti.random(float)  * 6.4+ 4.8]
-        #     self.particleManager.vel[x]=[0.0,0.0,0.0]
-        #     self.particleManager.density[x]=0
-        #     self.particleManager.volume[x]=0
-        #     self.particleManager.mass[x]=0.2
-        #     self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
-        #     self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
+        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+20000):
+            self.particleManager.pos[x]=[ti.random(float) * 6.4 + 4.8,1.0+ti.random(float)  * 1.0,ti.random(float)  * 6.4+ 4.8]
+            self.particleManager.vel[x]=[0.0,0.0,0.0]
+            self.particleManager.density[x]=0
+            self.particleManager.volume[x]=0
+            self.particleManager.mass[x]=0.2
+            self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
+            self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
         
         radius=0.8
-        for x in range(self.particleManager.particlesNum+0000,self.particleManager.particlesNum+20000):
+        for x in range(self.particleManager.particlesNum+20000,self.particleManager.particlesNum+24000):
             self.particleManager.pos[x]=[8-radius+ti.random(float)*2.0*radius,4.0-radius+ti.random(float)*2.0*radius,8-1.5+radius+ti.random(float)*2.0*radius]
-            self.particleManager.vel[x]=[0.0,-5.0,0.0]
+            self.particleManager.vel[x]=[0.0,0.0,0.0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
             self.particleManager.mass[x]=0.2
