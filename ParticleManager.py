@@ -100,7 +100,7 @@ class ParticleManager:
 
     @ti.kernel
     def clearCache(self):
-        for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
+        for x in ti.ndrange(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
             self.gridMass[x]=0.0
             self.gridForce[x]=ti.Vector.zero(float, 3)
             self.gridVelocity[x]=ti.Vector.zero(float, 3)
@@ -109,7 +109,7 @@ class ParticleManager:
     def rasterizeParticles(self):
         dx=self.config.gridSize
         idx=1.0/dx
-        for x in range(self.particlesNum):
+        for x in ti.ndrange(self.particlesNum):
             posX=self.pos[x][0]
             posY=self.pos[x][1]
             posZ=self.pos[x][2]
@@ -145,7 +145,7 @@ class ParticleManager:
         dx3=dx*dx*dx
         idx=1.0/dx
         
-        for x in range(self.particlesNum): 
+        for x in ti.ndrange(self.particlesNum): 
             self.density[x]=0.0           
             posX=self.pos[x][0]
             posY=self.pos[x][1]
@@ -177,10 +177,10 @@ class ParticleManager:
     def calculateForces(self):
         dx=self.config.gridSize
         idx=1.0/dx
-        for x in range(self.particlesNum):
+        for x in ti.ndrange(self.particlesNum):
             plastic_determinant=self.plastic[x].determinant()
-            if plastic_determinant<0.48:
-                plastic_determinant=0.48
+            if plastic_determinant<0.5:
+                plastic_determinant=0.5
             elastic_determinant=self.elastic[x].determinant()
             RE, SE = ti.polar_decompose(self.elastic[x])
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
@@ -221,7 +221,7 @@ class ParticleManager:
             
     @ti.kernel
     def updateGridVelocity(self, dt:float):
-        for x in range(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
+        for x in ti.ndrange(self.config.gridNumX*self.config.gridNumY*self.config.gridNumZ):
             if self.gridMass[x]>0.0:
                 self.gridOldVelocity[x]=self.gridVelocity[x]
                 self.gridVelocity[x]+=dt*self.gridForce[x]/self.gridMass[x]
@@ -231,7 +231,7 @@ class ParticleManager:
     def updateDeformationGradient(self,dt:float):
         dx=self.config.gridSize
         idx=1.0/dx
-        for x in range(self.particlesNum):
+        for x in ti.ndrange(self.particlesNum):
             grad_v=ti.Matrix.zero(float,3,3)
             posX=self.pos[x][0]
             posY=self.pos[x][1]
@@ -288,7 +288,7 @@ class ParticleManager:
     def updateParticleVelocity(self):
         dx=self.config.gridSize
         idx=1.0/dx
-        for x in range(self.particlesNum):
+        for x in ti.ndrange(self.particlesNum):
             posX=self.pos[x][0]
             posY=self.pos[x][1]
             posZ=self.pos[x][2]

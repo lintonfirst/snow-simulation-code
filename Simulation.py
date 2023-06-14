@@ -1,7 +1,7 @@
 from ParticleManager import ParticleManager
 from RigidBodyManager import RigidBodyManager
 from GroundManager import GroundManager
-from Config import Config,BasicConfig,FallConfig,ThrowConfig,RigidBodyConfig,PushConfig,CollideConfig
+from Config import Config
 import taichi as ti
 
 
@@ -31,7 +31,7 @@ class Simulation:
 @ti.data_oriented
 class BasicSimulation(Simulation):
     def __init__(self):
-        config=BasicConfig()
+        config=Config()
         super(BasicSimulation,self).__init__(config)
         self.init()
         self.particleManager.particlesNum=11*38*10*6
@@ -61,10 +61,12 @@ class BasicSimulation(Simulation):
 @ti.data_oriented
 class ThrowSnowBallSimulation(Simulation):
     def __init__(self):
-        config=ThrowConfig()
+        config=Config()
+        config.hardening_coefficient=25.0
+        config.filp_alpha=0.98
         super(ThrowSnowBallSimulation,self).__init__(config)
         self.init()
-        self.particleManager.particlesNum=10000
+        self.particleManager.particlesNum=20000
     
     @ti.kernel
     def init(self):
@@ -73,7 +75,7 @@ class ThrowSnowBallSimulation(Simulation):
         
         # 添加雪的粒子
         radius=0.6
-        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+10000):
+        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+20000):
             self.particleManager.pos[x]=[8-radius+2.0*radius*ti.random(float),3-radius+2.0*radius*ti.random(float),3.0-radius+2.0*radius*ti.random(float)]
             self.particleManager.vel[x]=[0.0,1.0,3.0]
             self.particleManager.mass[x]=0.2
@@ -83,7 +85,7 @@ class ThrowSnowBallSimulation(Simulation):
 @ti.data_oriented
 class RigidBodyFallSimulation(Simulation):
     def __init__(self):
-        config=RigidBodyConfig()
+        config=Config()
         super(RigidBodyFallSimulation,self).__init__(config)
         self.init()
         self.particleManager.particlesNum=20000
@@ -109,7 +111,7 @@ class RigidBodyFallSimulation(Simulation):
 @ti.data_oriented
 class SnowBallFallSimulation(Simulation):
     def __init__(self):
-        config=FallConfig()
+        config=Config()
         super(SnowBallFallSimulation,self).__init__(config)
         self.init()
         self.particleManager.particlesNum+=20000
@@ -143,7 +145,7 @@ class SnowBallFallSimulation(Simulation):
 @ti.data_oriented
 class PushPlaneSimulation(Simulation):
     def __init__(self):
-        config=PushConfig()
+        config=Config()
         super(PushPlaneSimulation,self).__init__(config)
         self.init()
         self.particleManager.particlesNum=20000
@@ -166,7 +168,7 @@ class PushPlaneSimulation(Simulation):
 @ti.data_oriented
 class SnowBallCollideSimulation(Simulation):
     def __init__(self):
-        config=CollideConfig()
+        config=Config()
         super(SnowBallCollideSimulation,self).__init__(config)
         self.init()
         self.particleManager.particlesNum+=4000
