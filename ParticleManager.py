@@ -183,7 +183,6 @@ class ParticleManager:
                 plastic_determinant=0.48
             elastic_determinant=self.elastic[x].determinant()
             RE, SE = ti.polar_decompose(self.elastic[x])
-                        
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             lam=self.config.lam*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             sigma=2.0*mu*(self.elastic[x]-RE)@self.elastic[x].transpose() + lam*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
