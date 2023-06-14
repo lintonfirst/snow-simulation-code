@@ -53,7 +53,7 @@ class PushConfig(Config):
         self.mu:float=self.youngs_modulus/(2.0*(1.0+self.poissons_ratio))
         self.lam:float=self.youngs_modulus*self.poissons_ratio/((1.0+self.poissons_ratio)* (1 - 2 * self.poissons_ratio))
         
-        self.filp_alpha:float=0.88
+        self.filp_alpha:float=0.95
         self.friction_coeff:float=0.35
         self.critical_compression:float=0.025
         self.critical_stretch:float=0.0075
@@ -114,7 +114,7 @@ class FallConfig(Config):
         self.mu:float=self.youngs_modulus/(2.0*(1.0+self.poissons_ratio))
         self.lam:float=self.youngs_modulus*self.poissons_ratio/((1.0+self.poissons_ratio)* (1 - 2 * self.poissons_ratio))
         
-        self.filp_alpha:float=0.8
+        self.filp_alpha:float=0.95
         self.friction_coeff:float=0.65
         self.critical_compression:float=0.025
         self.critical_stretch:float=0.0075

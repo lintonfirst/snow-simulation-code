@@ -179,12 +179,14 @@ class ParticleManager:
         idx=1.0/dx
         for x in range(self.particlesNum):
             plastic_determinant=self.plastic[x].determinant()
+            if plastic_determinant<0.48:
+                plastic_determinant=0.48
             elastic_determinant=self.elastic[x].determinant()
             RE, SE = ti.polar_decompose(self.elastic[x])
                         
             mu=self.config.mu*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
             lam=self.config.lam*ti.exp(self.config.hardening_coefficient*(1.0-plastic_determinant))
-            sigma=2.0*mu*(self.plastic[x]-RE)@self.elastic[x].transpose() + lam*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
+            sigma=2.0*mu*(self.elastic[x]-RE)@self.elastic[x].transpose() + lam*(elastic_determinant-1.0)*elastic_determinant*ti.Matrix.identity(float,3)             
             # sigma/=plastic_determinant*elastic_determinant
             # volume=self.volume[x]*plastic_determinant
             volume=self.volume[x]
@@ -224,6 +226,7 @@ class ParticleManager:
             if self.gridMass[x]>0.0:
                 self.gridOldVelocity[x]=self.gridVelocity[x]
                 self.gridVelocity[x]+=dt*self.gridForce[x]/self.gridMass[x]
+
 
     @ti.kernel
     def updateDeformationGradient(self,dt:float):

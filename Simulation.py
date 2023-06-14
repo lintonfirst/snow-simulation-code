@@ -144,7 +144,6 @@ class SnowBallFallSimulation(Simulation):
 class PushPlaneSimulation(Simulation):
     def __init__(self):
         config=PushConfig()
-        config.youngs_modulus=1e4
         super(PushPlaneSimulation,self).__init__(config)
         self.init()
         self.particleManager.particlesNum=20000
