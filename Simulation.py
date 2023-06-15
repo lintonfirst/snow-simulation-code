@@ -196,3 +196,34 @@ class SnowBallCollideSimulation(Simulation):
             self.particleManager.mass[x]=0.2
             self.particleManager.plastic[x]=ti.Matrix.identity(float,3)
             self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
+
+@ti.data_oriented
+class ThrowSnowBallSimulation2(Simulation):
+    def __init__(self):
+        config=Config()
+        config.hardening_coefficient=22.0
+        config.filp_alpha=0.98
+
+        super(ThrowSnowBallSimulation2,self).__init__(config)
+        self.init()
+        self.particleManager.particlesNum=20000
+    
+    @ti.kernel
+    def init(self):
+        # 添加平面
+        self.groundManager.addGround(8,8,16)
+        
+        # 添加雪的粒子
+        radius=0.6
+        for x in range(self.particleManager.particlesNum,self.particleManager.particlesNum+20000):
+            r=radius*ti.pow(ti.random(),0.33)
+            theta=ti.acos(1-2*ti.random())
+            phi=2*3.14*ti.random()
+            a=r*ti.sin(theta)*ti.cos(phi)
+            b=r*ti.sin(theta)*ti.sin(phi)
+            c=r*ti.cos(theta)
+            self.particleManager.pos[x]=[8.0+a,3.0+b,3.0+c]
+            self.particleManager.vel[x]=[0.0,1.0+ti.random(),3.0+ti.random()]
+            self.particleManager.mass[x]=0.2
+            self.particleManager.plastic[x]=ti.Matrix.identity(float,3)*(0.9+0.1*ti.random())
+            self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
