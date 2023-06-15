@@ -112,10 +112,11 @@ class RigidBodyFallSimulation(Simulation):
 class SnowBallFallSimulation(Simulation):
     def __init__(self):
         config=Config()
+        config.hardening_coefficient=12.0
         super(SnowBallFallSimulation,self).__init__(config)
         self.init()
         self.particleManager.particlesNum+=20000
-        self.particleManager.particlesNum+=4000
+        self.particleManager.particlesNum+=2000
     
     @ti.kernel
     def init(self):
@@ -133,9 +134,9 @@ class SnowBallFallSimulation(Simulation):
             self.particleManager.elastic[x]=ti.Matrix.identity(float,3)
         
         radius=0.8
-        for x in range(self.particleManager.particlesNum+20000,self.particleManager.particlesNum+24000):
-            self.particleManager.pos[x]=[8-radius+ti.random(float)*2.0*radius,4.0-radius+ti.random(float)*2.0*radius,8-1.5+radius+ti.random(float)*2.0*radius]
-            self.particleManager.vel[x]=[0.0,0.0,0.0]
+        for x in range(self.particleManager.particlesNum+20000,self.particleManager.particlesNum+22000):
+            self.particleManager.pos[x]=[8-radius+ti.random(float)*2.0*radius,4.0-radius+ti.random(float)*2.0*radius,4-1.5+radius+ti.random(float)*2.0*radius]
+            self.particleManager.vel[x]=[0.0,1.0,4.0]
             self.particleManager.density[x]=0
             self.particleManager.volume[x]=0
             self.particleManager.mass[x]=0.2
